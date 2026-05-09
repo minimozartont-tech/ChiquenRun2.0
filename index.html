@@ -32,7 +32,7 @@
 
     <div id="game-container">
         <div id="tut1" class="tutorial-overlay" onclick="iniciarJuegoFase1()"></div>  
-        <div id="tut2" class="tutorial-overlay" style="background-image: url('tutorial_fase2.png');" onclick="iniciarJuegoFase2()"></div>
+        <div id="tut2" class="tutorial-overlay" onclick="iniciarJuegoFase2()"></div>
 
         <div id="screen-concierto" onclick="mostrarTutorial2()">  
             <h1 style="color: #00ff00; font-size: 4vh;">🎸 TOCA AQUÍ 🎸</h1>  
@@ -67,7 +67,8 @@
     const assets = {
         intro: 'intro.png', motero: 'motero.png', coche: 'coche.png', pollo: 'pollo.png', 
         guardia: 'guardia.png', pizza: 'pizza.png', muralla: 'muralla.png', vida: 'vida.png', 
-        puente: 'puente.png', fondoF2: 'fondoentero.png', moteroF2: 'motero_fase2.png', 
+        puente: 'puente.png', fondoF2: 'fondoentero1.png', moteroF2: 'motero_fase2.png', 
+        chucho: 'chucho.png', tutChucho: 'tutorial_chucho.png', // NUEVOS ASSETS
         comida: 'comida.png', bueno: 'bueno.png', malo1: 'malo1.png', malo2: 'malo2.png', veneno: 'veneno.png'
     };
     const imgs = {};
@@ -142,7 +143,14 @@
 
     window.mostrarTutorial2 = function() {
         document.getElementById('screen-concierto').style.display = 'none';
-        document.getElementById('tut2').style.display = 'block';
+        const tut2 = document.getElementById('tut2');
+        // CAMBIO: Elige imagen de tutorial según vehículo
+        if(vehiculo === 'motero') {
+            tut2.style.backgroundImage = "url('tutorial_chucho.png')";
+        } else {
+            tut2.style.backgroundImage = "url('tutorial_fase2.png')";
+        }
+        tut2.style.display = 'block';
     }
 
     window.iniciarJuegoFase2 = function() {
@@ -181,7 +189,7 @@
         if (estado === 'INICIO') { if(imgs.intro.complete) ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
 
         if (estado === 'JUGANDO_F1') {
-            scrollY = (scrollY + 14) % GH; // VELOCIDAD FASE 1: era 9, ahora 14
+            scrollY = (scrollY + 14) % GH;
             const bg = modoPuente ? imgs.puente : imgs.muralla;
             ctx.drawImage(bg, 0, scrollY - GH, GW, GH); ctx.drawImage(bg, 0, scrollY, GW, GH);
             let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
@@ -190,7 +198,7 @@
             ctx.drawImage(imgs[vehiculo], player.x, player.y, player.w, player.h); ctx.globalAlpha = 1.0;
 
             for (let i = obstaculos.length - 1; i >= 0; i--) {
-                let o = obstaculos[i]; o.y += 13; // VELOCIDAD OBSTÁCULOS F1: era 8, ahora 13
+                let o = obstaculos[i]; o.y += 13;
                 let tam = (o.tipo === 'guardia') ? 150 : 110;
                 ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
                 if (player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
@@ -216,7 +224,7 @@
 
             itemsF2.forEach(it => {
                 if(!it.rec && framesF2 >= it.fTarget - 180) {
-                    it.x -= (GW / 90); // VELOCIDAD ITEMS F2: era 160, ahora 90
+                    it.x -= (GW / 90);
                     let yPos = (margS + altJ) - it.h - it.yB;
                     ctx.drawImage(it.img, it.x, yPos, it.w, it.h);
                     if(player.x < it.x+it.w-20 && player.x+100 > it.x+20 && player.y < yPos+it.h-20 && player.y+160 > yPos+20) {
@@ -232,7 +240,10 @@
 
             let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
-            ctx.drawImage(imgs.moteroF2, player.x, player.y, 100, 160);
+            
+            // CAMBIO: Dibuja Chucho o Motero según el vehículo elegido
+            let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
+            ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
 
             if(gas <= 0) location.reload();
             if(prog >= 1) {
