@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chicken Run - Cin City Edition</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        canvas { display: block; image-rendering: pixelated; margin: 0 auto; }
+        
+        #ui { 
+            position: absolute; top: 10px; width: 100%; text-align: center; 
+            color: #8e44ad; font-size: 14px; font-weight: bold;
+            text-shadow: 1px 1px #000; pointer-events: none; display: none; 
+        }
+        #dist, #score { color: #8e44ad; }
+        #level { color: #00ff00; font-size: 16px; margin-top: 3px; }
+
+        /* Contenedor para las imágenes de vida.png */
+        #lives-container { 
+            display: flex; justify-content: center; gap: 5px; margin-top: 5px; 
+        }
+        .vida-icon { width: 30px; height: auto; }
+
+        #selection {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column;
+            align-items: center; justify-content: center; color: white; z-index: 10;
+        }
+
+        #selection h2 {
+            color: #8e44ad; text-shadow: 2px 2px #000; text-align: center;
+            font-size: 28px; margin-bottom: 30px; text-transform: uppercase;
+        }
+
+        .option-container { display: flex; gap: 20px; align-items: flex-start; justify-content: center; }
+        .veh-column { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+
+        .veh-img-box { 
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid #8e44ad; border-radius: 20px; 
+            background: #111; width: 140px; height: 230px; 
+        }
+
+        .veh-img-box img { width: 85%; height: auto; pointer-events: none; }
+        
+        .veh-btn {
+            border: 2px solid #ffff00; padding: 10px 0; border-radius: 8px;
+            font-weight: bold; color: #ffff00; font-size: 18px; text-align: center;
+            width: 140px; background: rgba(255,255,0,0.1); cursor: pointer;
+        }
+
+        #msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #ff0000; font-size: 45px; font-weight: bold; display: none;
+            text-shadow: 3px 3px #000; text-align: center; width: 100%;
+        }
+
+        #levelEnd {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column;
+            align-items: center; justify-content: center; color: white; z-index: 11;
+        }
+
+        #levelEnd h1 {
+            color: #00ff00; font-size: 50px; text-shadow: 3px 3px #000; margin-bottom: 20px;
+        }
+
+        #levelEnd p {
+            color: #ffff00; font-size: 30px; margin: 10px 0;
+        }
+
+        #levelEnd .next-btn {
+            margin-top: 40px; padding: 15px 40px; font-size: 24px;
+            background: #8e44ad; color: #fff; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: bold;
+        }
+
+        #levelEnd .next-btn:hover {
+            background: #bb00ff;
+        }
+
+        #gameEnd {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column;
+            align-items: center; justify-content: center; color: white; z-index: 11;
+        }
+
+        #gameEnd h1 {
+            color: #00ff00; font-size: 60px; text-shadow: 3px 3px #000; margin-bottom: 20px;
+        }
+
+        #gameEnd p {
+            color: #ffff00; font-size: 35px; margin: 10px 0;
+        }
+
+        #gameEnd .restart-btn {
+            margin-top: 40px; padding: 15px 40px; font-size: 24px;
+            background: #8e44ad; color: #fff; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: bold;
+        }
+
+        #gameEnd .restart-btn:hover {
+            background: #bb00ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="level">NIVEL 1</div>
+        CIN CITY: <span id="dist">15000</span>m | PUNTOS: <span id="score">0</span>
+        <div id="lives-container"></div>
+    </div>
+
+    <div id="selection">
+        <h2>ELIXE O TEU<br>VEHÍCULO</h2>
+        <div class="option-container">
+            <div class="veh-column" onclick="startNow('motero')">
+                <div class="veh-img-box"><img src="motero.png"></div>
+                <div class="veh-btn">MOTO</div>
+            </div>
+            <div class="veh-column" onclick="startNow('coche')">
+                <div class="veh-img-box"><img src="coche.png"></div>
+                <div class="veh-btn">COCHE</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="levelEnd">
+        <h1>¡NIVEL COMPLETADO!</h1>
+        <p id="levelEndScore">Puntos: 0</p>
+        <p id="levelEndDist">Distancia: 15000m</p>
+        <button class="next-btn" onclick="goToLevel2()">SIGUIENTE NIVEL</button>
+    </div>
+
+    <div id="gameEnd">
+        <h1>¡JUEGO COMPLETADO!</h1>
+        <p id="finalScore">Puntos Totales: 0</p>
+        <p id="finalLevel">Completaste 2 Niveles</p>
+        <button class="restart-btn" onclick="restartGame()">VOLVER AL INICIO</button>
+    </div>
+
+    <div id="msg">XOGO REMATADO</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const sources = {
+            intro: 'intro.png', motero: 'motero.png', coche: 'coche.png', pollo: 'pollo.png',
+            guardia: 'guardia.png', pizza: 'pizza.png', escenario: 'escenario.png', 
+            muralla: 'muralla.png', vida: 'vida.png'
+        };
+
+        const imgs = {};
+        const trans = {};
+        let lives = 3, shake = 0, speedMultiplier = 1, selectedVeh = 'motero';
+        let state = 'START', dist = 15000, score = 0, obs = [], mY = 0;
+        let currentLevel = 1;
+        let totalScore = 0;
+        
+        const p = { lane: 1, x: canvas.width/2, y: canvas.height - 180, w: 85, h: 110 };
+
+        function clean(img, key) {
+            const c = document.createElement('canvas');
+            const x = c.getContext('2d');
+            c.width = img.width; c.height = img.height;
+            x.drawImage(img, 0, 0);
+            const d = x.getImageData(0, 0, c.width, c.height);
+            for (let i = 0; i < d.data.length; i += 4) {
+                if (d.data[i] < 30 && d.data[i+1] < 30 && d.data[i+2] < 30) d.data[i+3] = 0;
+            }
+            x.putImageData(d, 0, 0);
+            trans[key] = c;
+        }
+
+        for (let k in sources) {
+            imgs[k] = new Image();
+            imgs[k].onload = () => { 
+                if(['motero','pollo','guardia','pizza'].includes(k)) clean(imgs[k], k);
+            };
+            imgs[k].src = sources[k];
+        }
+
+        function updateUI() {
+            document.getElementById('dist').innerText = Math.max(0, Math.floor(dist));
+            document.getElementById('score').innerText = score;
+            document.getElementById('level').innerText = 'NIVEL ' + currentLevel;
+            
+            const container = document.getElementById('lives-container');
+            container.innerHTML = '';
+            for(let i=0; i<lives; i++) {
+                const img = document.createElement('img');
+                img.src = 'vida.png';
+                img.className = 'vida-icon';
+                container.appendChild(img);
+            }
+        }
+
+        window.startNow = function(type) {
+            selectedVeh = type;
+            p.w = (type === 'motero') ? 110 : 85;
+            state = 'PLAYING';
+            lives = 3; 
+            score = 0; 
+            dist = currentLevel === 1 ? 15000 : 15000;
+            obs = []; 
+            speedMultiplier = 1;
+            p.lane = 1;
+            p.x = canvas.width/2;
+            document.getElementById('selection').style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            updateUI();
+        }
+
+        window.goToLevel2 = function() {
+            totalScore += score;
+            currentLevel = 2;
+            state = 'START';
+            document.getElementById('levelEnd').style.display = 'none';
+            document.getElementById('selection').style.display = 'flex';
+        }
+
+        window.restartGame = function() {
+            totalScore = 0;
+            currentLevel = 1;
+            state = 'START';
+            score = 0;
+            dist = 15000;
+            document.getElementById('gameEnd').style.display = 'none';
+            document.getElementById('ui').style.display = 'none';
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('touchstart', (e) => {
+            if (state === 'START') { 
+                state = 'SELECTING';
+                document.getElementById('selection').style.display = 'flex';
+                return; 
+            }
+            if (state === 'PLAYING') {
+                if (e.touches[0].clientX < canvas.width / 2) { if (p.lane > 0) p.lane--; }
+                else { if (p.lane < 2) p.lane++; }
+            }
+        });
+
+        function spawn() {
+            if (state !== 'PLAYING') return;
+            const l = Math.floor(Math.random() * 3);
+            const r = Math.random();
+            let t = 'guardia', s = 5, w = 110, h = 120;
+            if (r < 0.4) { t = 'pollo'; s = 5; w = 80; h = 80; } 
+            else if (r < 0.7) { t = 'pizza'; s = 7; w = 90; h = 90; }
+            obs.push({ 
+                x: (canvas.width/3)*l + (canvas.width/6)-w/2, 
+                y: -150, w, h, type: t, 
+                speed: s * speedMultiplier,
+                vx: 0, 
+                isHit: false 
+            });
+        }
+        setInterval(spawn, 1100);
+
+        function draw() {
+            ctx.save();
+            if (shake > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shake--; }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if ((state === 'START' || state === 'SELECTING') && imgs.intro.complete) {
+                ctx.drawImage(imgs.intro, 0, 0, canvas.width, canvas.height);
+            } else if (state === 'PLAYING' || state === 'GAMEOVER') {
+                if (state === 'PLAYING') {
+                    dist -= (2 * speedMultiplier);
+                    mY = (mY + (6 * speedMultiplier)) % canvas.height;
+                    speedMultiplier = 1 + ((15000 - dist) / 15000);
+                    updateUI();
+                }
+                if(imgs.muralla.complete) {
+                    ctx.drawImage(imgs.muralla, 0, mY - canvas.height, canvas.width, canvas.height);
+                    ctx.drawImage(imgs.muralla, 0, mY, canvas.width, canvas.height);
+                }
+                let targetX = (canvas.width/3)*p.lane + (canvas.width/6)-p.w/2;
+                p.x += (targetX - p.x) * 0.2;
+
+                for (let i = obs.length - 1; i >= 0; i--) {
+                    let o = obs[i]; 
+                    o.y += o.speed;
+                    o.x += o.vx;
+
+                    if (state === 'PLAYING' && !o.isHit && p.x < o.x + o.w - 35 && p.x + p.w > o.x + 35 && p.y < o.y + o.h - 35 && p.y + p.h > o.y + 30) {
+                        if (o.type === 'pollo') { score += 100; obs.splice(i, 1); } 
+                        else { 
+                            lives--; shake = 20; updateUI();
+                            if (lives > 0) {
+                                o.isHit = true;
+                                o.vx = (p.lane === 0) ? 15 : -15; 
+                            } else {
+                                state = 'GAMEOVER';
+                                document.getElementById('msg').style.display = 'block';
+                                setTimeout(() => { 
+                                    document.getElementById('msg').style.display = 'none';
+                                    if (currentLevel === 1) {
+                                        state = 'START';
+                                        document.getElementById('ui').style.display = 'none';
+                                    } else {
+                                        showGameEnd();
+                                    }
+                                }, 2000);
+                            }
+                        }
+                    }
+                    const img = (o.type === 'coche') ? imgs['coche'] : (trans[o.type] || imgs[o.type]);
+                    if(img) ctx.drawImage(img, o.x, o.y, o.w, o.h);
+                    if (o.y > canvas.height || o.x < -200 || o.x > canvas.width + 200) obs.splice(i, 1);
+                }
+                const pImg = (selectedVeh === 'coche') ? imgs['coche'] : (trans[selectedVeh] || imgs[selectedVeh]);
+                if(pImg) ctx.drawImage(pImg, p.x, p.y, p.w, p.h);
+                
+                if (dist <= 0) {
+                    state = 'WIN';
+                }
+            } else if (state === 'WIN' && imgs.escenario.complete) {
+                ctx.drawImage(imgs.escenario, 0, 0, canvas.width, canvas.height);
+                
+                // Mostrar pantalla de nivel completado
+                setTimeout(() => {
+                    if (state === 'WIN') {
+                        document.getElementById('levelEndScore').innerText = 'Puntos: ' + score;
+                        document.getElementById('levelEndDist').innerText = 'Distancia: 15000m';
+                        document.getElementById('levelEnd').style.display = 'flex';
+                        state = 'LEVELEND';
+                    }
+                }, 1000);
+            }
+            ctx.restore();
+            requestAnimationFrame(draw);
+        }
+
+        function showGameEnd() {
+            document.getElementById('finalScore').innerText = 'Puntos Totales: ' + (totalScore + score);
+            document.getElementById('gameEnd').style.display = 'flex';
+            state = 'ENDED';
+        }
+
+        draw();
+    </script>
+</body>
+</html>
