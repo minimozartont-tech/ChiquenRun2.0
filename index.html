@@ -9,13 +9,14 @@
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
-        #timer-display { position: absolute; top: 5%; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
+        #timer-display { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
-        .ui-box { position: absolute; bottom: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
-        #score-box { left: 20px; }
-        #gas-box { right: 20px; }
+        /* CAMBIO: Marcadores arriba */
+        .ui-box { position: absolute; top: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
+        #score-box { right: 20px; } /* Puntos a la derecha */
+        #gas-box { right: 20px; bottom: 20px; top: auto; } /* El gas lo mantenemos abajo para no chocar */
         
-        #lives-box { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 8px; border-radius: 10px; display: none; display: flex; gap: 5px; z-index: 10; }  
+        #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 8px; border-radius: 10px; display: none; display: flex; gap: 5px; z-index: 10; } /* Vidas a la izquierda */
         .vida-icon { width: 3.5vh; height: auto; }
 
         #selection { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: flex-start; color: white; z-index: 100; padding: 40px 20px; text-align: center; }  
@@ -42,8 +43,8 @@
         <div id="selection">  
             <div style="color: #8e44ad; font-weight: bold; font-size: 3.5vh; margin-top: 20px;">ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO SIN CITY...</div>
             <div class="option-container">
-                <div onclick="mostrarTut1('moto')" class="veh-btn">MOTO<br><img src="motero.png"></div>  
-                <div onclick="mostrarTut1('coche')" class="veh-btn">COCHE<br><img src="coche.png"></div>  
+                <div onclick="mostrarTut1('moto')" class="veh-btn">CHUCHO<br><img src="motero.png"></div>  
+                <div onclick="mostrarTut1('coche')" class="veh-btn">BOCHO<br><img src="coche.png"></div>  
             </div>
         </div>  
         
@@ -68,7 +69,7 @@
         intro: 'intro.png', motero: 'motero.png', coche: 'coche.png', pollo: 'pollo.png', 
         guardia: 'guardia.png', pizza: 'pizza.png', muralla: 'muralla.png', vida: 'vida.png', 
         puente: 'puente.png', fondoF2: 'fondoentero1.png', moteroF2: 'motero_fase2.png', 
-        chucho: 'chucho.png', tutChucho: 'tutorial_chucho.png', // NUEVOS ASSETS
+        chucho: 'chucho.png', tutChucho: 'tutorial_chucho.png',
         comida: 'comida.png', bueno: 'bueno.png', malo1: 'malo1.png', malo2: 'malo2.png', veneno: 'veneno.png'
     };
     const imgs = {};
@@ -144,7 +145,6 @@
     window.mostrarTutorial2 = function() {
         document.getElementById('screen-concierto').style.display = 'none';
         const tut2 = document.getElementById('tut2');
-        // CAMBIO: Elige imagen de tutorial según vehículo
         if(vehiculo === 'motero') {
             tut2.style.backgroundImage = "url('tutorial_chucho.png')";
         } else {
@@ -241,7 +241,6 @@
             let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
             
-            // CAMBIO: Dibuja Chucho o Motero según el vehículo elegido
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
 
