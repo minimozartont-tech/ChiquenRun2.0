@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ChiquenRun 2.0</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; background-image: url('fondoentero1.png'); background-size: cover; }
+        body { margin: 0; overflow: hidden; background: #000; position: fixed; width: 100%; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
@@ -17,50 +17,66 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Carga de tus imágenes reales
+        // Carga de tus imágenes (usando los nombres exactos de tu GitHub)
         const imgPollo = new Image(); imgPollo.src = 'pollo.png';
         const imgMalo = new Image(); imgMalo.src = 'malo1.png';
         const imgFondo = new Image(); imgFondo.src = 'fondoentero1.png';
 
         let score = 0;
-        const player = { x: canvas.width/2, y: canvas.height - 100, w: 60, h: 60 };
+        let gameActive = true;
+
+        // Ajustamos el tamaño del pollo y los enemigos para que no se vea "mezclado"
+        const player = { x: canvas.width / 2 - 30, y: canvas.height - 120, w: 60, h: 60 };
         const enemies = [];
 
-        function crearEnemigo() {
-            enemies.push({ x: Math.random() * (canvas.width - 50), y: -50, w: 50, h: 50, speed: 4 });
+        function spawn() {
+            if(!gameActive) return;
+            enemies.push({ x: Math.random() * (canvas.width - 50), y: -60, w: 60, h: 60, speed: 5 });
         }
 
-        function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Dibujar fondo
-            ctx.drawImage(imgFondo, 0, 0, canvas.width, canvas.height);
-
-            // Dibujar Pollo
-            ctx.drawImage(imgPollo, player.x, player.y, player.w, player.h);
-
-            // Dibujar Enemigos
-            enemies.forEach((enemy, i) => {
-                enemy.y += enemy.speed;
-                ctx.drawImage(imgMalo, enemy.x, enemy.y, enemy.w, enemy.h);
-                
-                // Colisión
-                if (player.x < enemy.x + enemy.w && player.x + player.w > enemy.x &&
-                    player.y < enemy.y + enemy.h && player.y + player.h > enemy.y) {
-                    alert("¡Choque! Puntos: " + score);
+        function update() {
+            if(!gameActive) return;
+            enemies.forEach((en, i) => {
+                en.y += en.speed;
+                // Colisión simple
+                if (player.x < en.x + en.w && player.x + player.w > en.x &&
+                    player.y < en.y + en.h && player.y + player.h > en.y) {
+                    gameActive = false;
+                    alert("¡GAME OVER! Puntos: " + score);
                     location.reload();
                 }
+                if(en.y > canvas.height) { enemies.splice(i, 1); score++; }
             });
+            if (Math.random() < 0.03) spawn();
+        }
 
-            if (Math.random() < 0.02) crearEnemigo();
-            requestAnimationFrame(loop);
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 1. Dibujar el fondo estirado a la pantalla
+            ctx.drawImage(imgFondo, 0, 0, canvas.width, canvas.height);
+
+            // 2. Dibujar tu pollo
+            ctx.drawImage(imgPollo, player.x, player.y, player.w, player.h);
+
+            // 3. Dibujar enemigos (malo1.png)
+            enemies.forEach(en => ctx.drawImage(imgMalo, en.x, en.y, en.w, en.h));
+
+            // 4. Puntos
+            ctx.fillStyle = "white";
+            ctx.font = "25px Arial";
+            ctx.fillText("Puntos: " + score, 20, 40);
+
+            update();
+            requestAnimationFrame(draw);
         }
 
         canvas.addEventListener('touchmove', (e) => {
-            player.x = e.touches[0].clientX - player.w/2;
+            player.x = e.touches[0].clientX - player.w / 2;
         });
 
-        imgFondo.onload = loop;
+        // Arrancar cuando el fondo cargue
+        imgFondo.onload = () => { draw(); };
     </script>
 </body>
 </html>
