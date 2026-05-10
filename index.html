@@ -9,11 +9,12 @@
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
-        #timer-display { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
+        /* El timer cambia de posición según la fase por JS */
+        #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
         .ui-box { position: absolute; top: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
         #score-box { right: 20px; } 
-        #gas-box { right: 20px; bottom: 20px; top: auto; } 
+        #gas-box { left: 20px; top: 20px; } /* En F2 lo pondremos arriba a la izquierda */
         
         #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
         .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
@@ -81,10 +82,11 @@
     const imgs = {};
     for (let k in assets) { imgs[k] = new Image(); imgs[k].src = assets[k]; }
 
+    // Sistema de audio dinámico
     const audio = {
-        bg1: new Audio('musica_juego.mp3'), bg2: new Audio('musica_fondo.mp3'),
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
-        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav')
+        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
+        bg1: null, bg2: null
     };
     audio.crash.volume = 1.0;
 
@@ -95,6 +97,7 @@
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
+        if (!audioElement) return;
         const startVolume = audioElement.volume;
         const steps = 20;
         const interval = duration / steps;
@@ -112,7 +115,15 @@
     }
 
     window.mostrarTut1 = function(v) {
-        vehiculo = (v === 'moto') ? 'motero' : 'coche';
+        if (v === 'moto') {
+            vehiculo = 'motero';
+            audio.bg1 = new Audio('musica_chucho.mp3');
+            audio.bg2 = new Audio('musica_fondo.mp3');
+        } else {
+            vehiculo = 'coche';
+            audio.bg1 = new Audio('musica_juego.mp3');
+            audio.bg2 = new Audio('musica_albweto.mp3');
+        }
         document.getElementById('selection').style.display = 'none';
         const tut = document.getElementById('tut1');
         tut.style.backgroundImage = `url('tutorial_fase1_${v}.png')`;
@@ -122,12 +133,14 @@
 
     window.iniciarJuegoFase1 = function() {
         document.getElementById('tut1').style.display = 'none';
-        document.getElementById('timer-display').style.display = 'block';
+        const timer = document.getElementById('timer-display');
+        timer.style.top = '10%'; timer.style.bottom = 'auto'; // Timer arriba en F1
+        timer.style.display = 'block';
         document.getElementById('score-box').style.display = 'block';
         document.getElementById('lives-box').style.display = 'flex';
         document.getElementById('gas-box').style.display = 'none';
-        tiempo = 50; audio.bg1.volume = 1;
-        audio.bg1.loop = true; audio.bg1.play();
+        tiempo = 50; 
+        audio.bg1.volume = 1; audio.bg1.loop = true; audio.bg1.play();
         actualizarVidasUI();
         estado = 'JUGANDO_F1';
     }
@@ -152,19 +165,20 @@
     window.mostrarTutorial2 = function() {
         document.getElementById('screen-concierto').style.display = 'none';
         const tut2 = document.getElementById('tut2');
-        if(vehiculo === 'motero') {
-            tut2.style.backgroundImage = "url('tutorial_chucho.png')";
-        } else {
-            tut2.style.backgroundImage = "url('tutorial_fase2.png')";
-        }
+        tut2.style.backgroundImage = (vehiculo === 'motero') ? "url('tutorial_chucho.png')" : "url('tutorial_fase2.png')";
         tut2.style.display = 'block';
     }
 
     window.iniciarJuegoFase2 = function() {
         document.getElementById('tut2').style.display = 'none';
-        document.getElementById('timer-display').style.display = 'block';
+        const timer = document.getElementById('timer-display');
+        timer.style.top = 'auto'; timer.style.bottom = '5%'; // Timer abajo en F2
+        timer.style.display = 'block';
+        
         document.getElementById('score-box').style.display = 'block';
-        document.getElementById('gas-box').style.display = 'block';
+        const gasBox = document.getElementById('gas-box');
+        gasBox.style.top = '20px'; gasBox.style.bottom = 'auto'; // Gas arriba en F2
+        gasBox.style.display = 'block';
         document.getElementById('lives-box').style.display = 'none';
         
         gas = 100; framesF2 = 0; itemsF2 = []; tiempo = 50;
@@ -210,14 +224,7 @@
                 ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
                 if (player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
                     if(o.tipo === 'pollo') { score += 100; audio.point.play(); document.getElementById('score').innerText = score; } 
-                    else { 
-                        vidas--; 
-                        audio.crash.currentTime = 0; 
-                        audio.crash.play(); 
-                        frameParpadeo = 40; 
-                        actualizarVidasUI(); 
-                        if(vidas <= 0) location.reload(); 
-                    }
+                    else { vidas--; audio.crash.currentTime = 0; audio.crash.play(); frameParpadeo = 40; actualizarVidasUI(); if(vidas <= 0) location.reload(); }
                     obstaculos.splice(i, 1);
                 }
             }
@@ -266,10 +273,9 @@
                 document.getElementById('gas-box').style.display = 'none';
                 
                 const v2 = document.getElementById('video-fase2'); 
-                // CAMBIO: Lógica para elegir el vídeo final según el vehículo
                 v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
-                
                 v2.style.display = 'block'; v2.play();
+                
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
                 v2.onended = () => location.reload();
             }
