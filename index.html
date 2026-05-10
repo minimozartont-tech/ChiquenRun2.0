@@ -15,7 +15,6 @@
         #score-box { right: 20px; } 
         #gas-box { right: 20px; bottom: 20px; top: auto; } 
         
-        /* NUEVO SISTEMA DE VIDAS */
         #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
         .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
         .vida-icon { width: 90%; height: auto; }
@@ -64,7 +63,7 @@
     </div>
 
     <video id="video-fase1" class="video-overlay" playsinline muted></video>
-    <video id="video-fase2" class="video-overlay" playsinline muted src="concierto.mp4"></video>
+    <video id="video-fase2" class="video-overlay" playsinline muted></video>
 
 <script>  
     const canvas = document.getElementById('gameCanvas');  
@@ -87,13 +86,12 @@
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
         bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav')
     };
-    audio.crash.volume = 1.0; // Sonido de choque a tope
+    audio.crash.volume = 1.0;
 
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
     let modoPuente = false, frameParpadeo = 0;
     
-    // Player y un poco más arriba (era GH-200, ahora GH-250)
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -108,7 +106,6 @@
     }
 
     function actualizarVidasUI() {
-        // Marcamos con X las vidas perdidas
         for(let i=0; i<3; i++) {
             document.getElementById(`cross-${i}`).style.display = (i >= vidas) ? 'flex' : 'none';
         }
@@ -267,7 +264,12 @@
                 document.getElementById('timer-display').style.display = 'none';
                 document.getElementById('score-box').style.display = 'none';
                 document.getElementById('gas-box').style.display = 'none';
-                const v2 = document.getElementById('video-fase2'); v2.style.display = 'block'; v2.play();
+                
+                const v2 = document.getElementById('video-fase2'); 
+                // CAMBIO: Lógica para elegir el vídeo final según el vehículo
+                v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
+                
+                v2.style.display = 'block'; v2.play();
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
                 v2.onended = () => location.reload();
             }
