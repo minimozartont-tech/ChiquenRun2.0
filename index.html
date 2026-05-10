@@ -11,18 +11,20 @@
 
         #timer-display { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
-        /* CAMBIO: Marcadores arriba */
         .ui-box { position: absolute; top: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
-        #score-box { right: 20px; } /* Puntos a la derecha */
-        #gas-box { right: 20px; bottom: 20px; top: auto; } /* El gas lo mantenemos abajo para no chocar */
+        #score-box { right: 20px; } 
+        #gas-box { right: 20px; bottom: 20px; top: auto; } 
         
-        #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 8px; border-radius: 10px; display: none; display: flex; gap: 5px; z-index: 10; } /* Vidas a la izquierda */
-        .vida-icon { width: 3.5vh; height: auto; }
+        /* NUEVO SISTEMA DE VIDAS */
+        #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
+        .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
+        .vida-icon { width: 90%; height: auto; }
+        .cross { position: absolute; inset: 0; color: red; font-size: 4vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; }
 
         #selection { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: flex-start; color: white; z-index: 100; padding: 40px 20px; text-align: center; }  
         .option-container { display: flex; flex-direction: row; gap: 15px; justify-content: center; width: 100%; margin-top: auto; margin-bottom: 40px; }
-        .veh-btn { border: 3px solid #ffff00; padding: 15px 5px; border-radius: 20px; background: rgba(255,255,0,0.1); color: #ffff00; font-weight: bold; flex: 1; text-align: center; }
-        .veh-btn img { height: 14vh; margin-top: 10px; object-fit: contain; }
+        .veh-btn { border: 3px solid #ffff00; padding: 15px 5px; border-radius: 20px; background: rgba(255,255,0,0.1); color: #ffff00; font-weight: bold; flex: 1; text-align: center; font-size: 1.8vh; }
+        .veh-btn img { height: 14vh; margin: 10px 0; object-fit: contain; }
 
         #screen-concierto { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 110; text-align: center; }
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
@@ -41,17 +43,22 @@
         </div>
 
         <div id="selection">  
-            <div style="color: #8e44ad; font-weight: bold; font-size: 3.5vh; margin-top: 20px;">ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO SIN CITY...</div>
+            <div style="color: #8e44ad; font-weight: bold; font-size: 3.5vh; margin-top: 20px;">ESCOLLE O TEU VEHÍCULO</div>
             <div class="option-container">
-                <div onclick="mostrarTut1('moto')" class="veh-btn">CHUCHO<br><img src="motero.png"></div>  
-                <div onclick="mostrarTut1('coche')" class="veh-btn">BOCHO<br><img src="coche.png"></div>  
+                <div onclick="mostrarTut1('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
+                <div onclick="mostrarTut1('coche')" class="veh-btn">COCHE<br><img src="coche.png"><br>BOCHO</div>  
             </div>
         </div>  
         
         <div id="timer-display">50</div>  
         <div id="score-box" class="ui-box">PUNTOS: <span id="score">0</span></div>  
         <div id="gas-box" class="ui-box">GAS: <span id="gas-value">100</span>%</div>
-        <div id="lives-box"></div>  
+        
+        <div id="lives-box">
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
+        </div>  
 
         <canvas id="gameCanvas"></canvas>  
     </div>
@@ -80,12 +87,14 @@
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
         bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav')
     };
+    audio.crash.volume = 1.0; // Sonido de choque a tope
 
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
     let modoPuente = false, frameParpadeo = 0;
     
-    const player = { x: GW/2, y: GH-200, w: 120, h: 160, vy: 0, saltos: 0 };
+    // Player y un poco más arriba (era GH-200, ahora GH-250)
+    const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
         const startVolume = audioElement.volume;
@@ -99,9 +108,10 @@
     }
 
     function actualizarVidasUI() {
-        const box = document.getElementById('lives-box');
-        box.innerHTML = '';
-        for(let i=0; i<vidas; i++) box.innerHTML += `<img src="vida.png" class="vida-icon">`;
+        // Marcamos con X las vidas perdidas
+        for(let i=0; i<3; i++) {
+            document.getElementById(`cross-${i}`).style.display = (i >= vidas) ? 'flex' : 'none';
+        }
     }
 
     window.mostrarTut1 = function(v) {
@@ -203,7 +213,14 @@
                 ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
                 if (player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
                     if(o.tipo === 'pollo') { score += 100; audio.point.play(); document.getElementById('score').innerText = score; } 
-                    else { vidas--; audio.crash.currentTime = 0; audio.crash.play(); frameParpadeo = 40; actualizarVidasUI(); if(vidas <= 0) location.reload(); }
+                    else { 
+                        vidas--; 
+                        audio.crash.currentTime = 0; 
+                        audio.crash.play(); 
+                        frameParpadeo = 40; 
+                        actualizarVidasUI(); 
+                        if(vidas <= 0) location.reload(); 
+                    }
                     obstaculos.splice(i, 1);
                 }
             }
