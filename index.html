@@ -11,9 +11,10 @@
 
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
-        .ui-box { position: absolute; top: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
-        #score-box { right: 20px; } 
-        #gas-box { left: 20px; top: 20px; } 
+        .ui-box { position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
+        #score-box { right: 20px; top: 20px; } 
+        /* Ajuste: Gas debajo de Puntos en Fase 2 */
+        #gas-box { right: 20px; top: 80px; } 
         
         #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
         .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
@@ -43,7 +44,8 @@
 
         <div id="selection">  
             <div style="color: #8e44ad; font-weight: bold; font-size: 3.2vh; margin-top: 20px;">
-                ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO <span style="color:white">SIN CITY</span>
+                ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO...
+                <div style="color:white; font-size: 5vh; margin-top: 15px; letter-spacing: 2px;">SIN CITY</div>
             </div>
             <div class="option-container">
                 <div onclick="mostrarTut1('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
@@ -150,17 +152,15 @@
         if (estado === 'INICIO') { if(imgs.intro.complete) ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
 
         if (estado === 'JUGANDO_F1') {
-            // Movimiento del fondo (se para si tiempo <= 0)
             if (tiempo > 0) scrollY = (scrollY + 14) % GH;
             const bg = modoPuente ? imgs.puente : imgs.muralla;
             ctx.drawImage(bg, 0, scrollY - GH, GW, GH); ctx.drawImage(bg, 0, scrollY, GW, GH);
 
-            // Control de carril y animación de salida
             let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
             if (tiempo <= 0) {
-                carril = 1; // Bloqueo al centro
+                carril = 1; 
                 player.x += (destinoX - player.x) * 0.1;
-                player.speedOut += 0.8; // Aceleración hacia arriba
+                player.speedOut += 0.8; 
                 player.y -= player.speedOut;
                 if (player.y < -player.h && !f1Finalizado) {
                     f1Finalizado = true;
@@ -173,7 +173,6 @@
             if (frameParpadeo > 0) { frameParpadeo--; if (Math.floor(frameParpadeo / 5) % 2 === 0) ctx.globalAlpha = 0.3; }
             ctx.drawImage(imgs[vehiculo], player.x, player.y, player.w, player.h); ctx.globalAlpha = 1.0;
 
-            // Obstáculos
             for (let i = obstaculos.length - 1; i >= 0; i--) {
                 let o = obstaculos[i]; 
                 if (tiempo > 0) o.y += 13;
@@ -188,12 +187,11 @@
 
             if (tiempo > 0) {
                 tiempo -= 1/60;
-                if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } // Inicia puente justo al llegar a 0
+                if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } 
             }
             document.getElementById('timer-display').innerText = Math.ceil(tiempo);
         }
 
-        // --- LÓGICA FASE 2 (Igual que antes pero con cronómetro abajo) ---
         if (estado === 'JUGANDO_F2') {
             let prog = framesF2 / 6000; if (prog < 1) framesF2++;
             tiempo = 50 - (prog * 50); document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
@@ -298,7 +296,6 @@
         if(estado === 'JUGANDO_F1' && tiempo > 0) {
             const r = Math.random();
             let t = 'guardia';
-            // CAMBIO: Probabilidades iguales (33% cada uno)
             if (r < 0.33) t = 'pollo'; 
             else if (r < 0.66) t = 'pizza'; 
             else t = 'guardia';
@@ -311,4 +308,3 @@
 </script>  
 </body>  
 </html>
- 
