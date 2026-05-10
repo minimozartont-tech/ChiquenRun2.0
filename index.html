@@ -4,15 +4,17 @@
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
     <title>Festival Run - Edición Concierto</title>  
-    <style>  
-<link rel="manifest" href="manifest.json">
+    
+    <link rel="manifest" href="manifest.json">
 
+    <style>  
         body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }  
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
+        /* Cajas de UI */
         .ui-box { position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 120px; text-align: center; }
         
         /* Marcadores centrados para Fase 2 */
@@ -24,6 +26,7 @@
         .vida-icon { width: 90%; height: auto; }
         .cross { position: absolute; inset: 0; color: red; font-size: 4vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; }
 
+        /* Menú de Selección */
         #selection { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: flex-start; color: white; z-index: 100; padding: 40px 20px; text-align: center; }  
         .option-container { display: flex; flex-direction: row; gap: 15px; justify-content: center; width: 100%; margin-top: auto; margin-bottom: 40px; }
         .veh-btn { border: 3px solid #ffff00; padding: 15px 5px; border-radius: 20px; background: rgba(255,255,0,0.1); color: #ffff00; font-weight: bold; flex: 1; text-align: center; font-size: 1.8vh; }
@@ -301,9 +304,11 @@
         } 
     }, 900);
 
-    // Registro de Service Worker para PWA
+    // Registro obligatorio de Service Worker para PWA
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+      window.addEventListener('load', () => { 
+          navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err)); 
+      });
     }
 
     loop();
