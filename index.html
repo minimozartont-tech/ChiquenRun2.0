@@ -14,26 +14,27 @@
 
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
-        /* Cajas de UI Genéricas */
-        .ui-box { position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; text-align: center; }
+        /* Cajas de UI Separadas e Independientes */
+        .ui-box { position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 8px 12px; border-radius: 12px; color: #fff; display: none; z-index: 10; font-size: 1.8vh; font-weight: bold; }
         
-        /* CORRECCIÓN: Posiciones Fase 1 */
-        #score-box { right: 20px; top: 20px; min-width: 100px; } /* Puntos a la derecha */
-        #lives-box { left: 20px; top: 20px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; } /* Vidas a la izquierda */
+        /* Posiciones Fase 1: Vidas Izquierda, Puntos Derecha */
+        #score-box { right: 15px; top: 15px; min-width: 80px; text-align: right; } 
+        #lives-box { left: 15px; top: 15px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 5px 8px; border-radius: 12px; align-items: center; }
         
-        /* CORRECCIÓN: Posiciones Fase 2 (Centrados) */
-        .fase2-score { left: 50% !important; right: auto !important; transform: translateX(-50%); top: 20px; }
-        #gas-box { left: 50%; transform: translateX(-50%); top: 85px; } 
+        /* Ajuste para Fase 2: Marcadores centrados */
+        .fase2-score { left: 50% !important; right: auto !important; transform: translateX(-50%); top: 15px; text-align: center !important; }
+        #gas-box { left: 50%; transform: translateX(-50%); top: 75px; min-width: 120px; } 
         
-        .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
-        .vida-icon { width: 90%; height: auto; }
-        .cross { position: absolute; inset: 0; color: red; font-size: 4vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; }
+        .vida-slot { position: relative; width: 3.5vh; height: 3.5vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
+        .vida-icon { width: 85%; height: auto; }
+        .cross { position: absolute; inset: 0; color: #ff0000; font-size: 3.5vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; text-shadow: 1px 1px #000; }
 
-        /* Resto de estilos igual */
+        /* Menú de Selección */
         #selection { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: flex-start; color: white; z-index: 100; padding: 40px 20px; text-align: center; }  
         .option-container { display: flex; flex-direction: row; gap: 15px; justify-content: center; width: 100%; margin-top: auto; margin-bottom: 40px; }
         .veh-btn { border: 3px solid #ffff00; padding: 15px 5px; border-radius: 20px; background: rgba(255,255,0,0.1); color: #ffff00; font-weight: bold; flex: 1; text-align: center; font-size: 1.8vh; }
         .veh-btn img { height: 14vh; margin: 10px 0; object-fit: contain; }
+
         #screen-concierto { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 110; text-align: center; }
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
@@ -143,7 +144,7 @@
         document.getElementById('tut1').style.display = 'none';
         const timer = document.getElementById('timer-display');
         timer.style.top = '10%'; timer.style.display = 'block';
-        document.getElementById('score-box').classList.remove('fase2-score'); // Asegurar posición Fase 1
+        document.getElementById('score-box').classList.remove('fase2-score'); 
         document.getElementById('score-box').style.display = 'block';
         document.getElementById('lives-box').style.display = 'flex';
         document.getElementById('gas-box').style.display = 'none';
@@ -263,7 +264,7 @@
         const timer = document.getElementById('timer-display');
         timer.style.top = 'auto'; timer.style.bottom = '5%';
         timer.style.display = 'block';
-        document.getElementById('score-box').classList.add('fase2-score'); // Centrar marcador en Fase 2
+        document.getElementById('score-box').classList.add('fase2-score'); 
         document.getElementById('score-box').style.display = 'block';
         document.getElementById('gas-box').style.display = 'block';
         document.getElementById('lives-box').style.display = 'none';
@@ -307,6 +308,7 @@
         } 
     }, 900);
 
+    // Registro Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => { 
           navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err)); 
