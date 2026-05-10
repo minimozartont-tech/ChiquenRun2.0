@@ -7,7 +7,6 @@
     <link rel="manifest" href="manifest.json">
 
     <style>  
-        /* Evita que se seleccione texto al tocar rápido */
         * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }  
@@ -96,7 +95,7 @@
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
     let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
-    let seleccionHabilitada = false; // Para evitar clicks accidentales
+    let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -117,7 +116,6 @@
         }
     }
 
-    // Nueva función para evitar la selección inmediata
     window.intentarSeleccion = function(v) {
         if (!seleccionHabilitada) return;
         mostrarTut1(v);
@@ -165,12 +163,10 @@
 
             let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
             if (tiempo <= 0) {
-                // Secuencia final suavizada
                 carril = 1; 
                 player.x += (destinoX - player.x) * 0.08;
-                // Espera a estar centrado antes de acelerar fuerte
                 if(Math.abs(player.x - destinoX) < 10) {
-                    player.speedOut += 0.4; // Aceleración más lenta y elegante
+                    player.speedOut += 0.4;
                     player.y -= player.speedOut;
                 }
                 if (player.y < -player.h && !f1Finalizado) {
@@ -190,8 +186,20 @@
                 let tam = (o.tipo === 'guardia') ? 150 : 110;
                 ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
                 if (tiempo > 0 && player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
-                    if(o.tipo === 'pollo') { score += 100; audio.point.play(); document.getElementById('score').innerText = score; } 
-                    else { vidas--; audio.crash.currentTime = 0; audio.crash.play(); frameParpadeo = 40; actualizarVidasUI(); if(vidas <= 0) location.reload(); }
+                    if(o.tipo === 'pollo') { 
+                        score += 100; 
+                        audio.point.play(); 
+                        document.getElementById('score').innerText = score; 
+                    } 
+                    else { 
+                        vidas--; 
+                        audio.crash.currentTime = 0; 
+                        audio.crash.play(); 
+                        if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 1
+                        frameParpadeo = 40; 
+                        actualizarVidasUI(); 
+                        if(vidas <= 0) location.reload(); 
+                    }
                     obstaculos.splice(i, 1);
                 }
             }
@@ -220,7 +228,11 @@
                         it.rec = true;
                         if(it.tipo==='pollo' || it.tipo==='comida'){ score+=100; audio.point.play(); }
                         if(it.tipo==='bueno'){ gas=Math.min(100, gas+15); audio.bueno.play(); }
-                        if(it.tipo==='malo' || it.tipo==='veneno'){ gas-=10; audio.malo.play(); }
+                        if(it.tipo==='malo' || it.tipo==='veneno'){ 
+                            gas-=10; 
+                            audio.malo.play(); 
+                            if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 2
+                        }
                         document.getElementById('score').innerText = score;
                         document.getElementById('gas-value').innerText = Math.floor(gas);
                     }
@@ -301,7 +313,7 @@
             document.getElementById('selection').style.display = 'flex'; 
             estado = 'SELECCION'; 
             seleccionHabilitada = false;
-            setTimeout(() => { seleccionHabilitada = true; }, 400); // 400ms de espera para evitar toques fantasma
+            setTimeout(() => { seleccionHabilitada = true; }, 400); 
         }
         else if (estado === 'JUGANDO_F1' && tiempo > 0) {
             if(e.touches[0].clientX < window.innerWidth/2) { if(carril > 0) carril--; } else { if(carril < 2) carril++; }
