@@ -9,12 +9,11 @@
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
-        /* El timer cambia de posición según la fase por JS */
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
         .ui-box { position: absolute; top: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
         #score-box { right: 20px; } 
-        #gas-box { left: 20px; top: 20px; } /* En F2 lo pondremos arriba a la izquierda */
+        #gas-box { left: 20px; top: 20px; } 
         
         #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
         .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
@@ -43,7 +42,9 @@
         </div>
 
         <div id="selection">  
-            <div style="color: #8e44ad; font-weight: bold; font-size: 3.5vh; margin-top: 20px;">ESCOLLE O TEU VEHÍCULO</div>
+            <div style="color: #8e44ad; font-weight: bold; font-size: 3.2vh; margin-top: 20px;">
+                ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO <span style="color:white">SIN CITY</span>
+            </div>
             <div class="option-container">
                 <div onclick="mostrarTut1('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
                 <div onclick="mostrarTut1('coche')" class="veh-btn">COCHE<br><img src="coche.png"><br>BOCHO</div>  
@@ -82,7 +83,6 @@
     const imgs = {};
     for (let k in assets) { imgs[k] = new Image(); imgs[k].src = assets[k]; }
 
-    // Sistema de audio dinámico
     const audio = {
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
         bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
@@ -92,9 +92,9 @@
 
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
-    let modoPuente = false, frameParpadeo = 0;
+    let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
     
-    const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0 };
+    const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
         if (!audioElement) return;
@@ -134,15 +134,108 @@
     window.iniciarJuegoFase1 = function() {
         document.getElementById('tut1').style.display = 'none';
         const timer = document.getElementById('timer-display');
-        timer.style.top = '10%'; timer.style.bottom = 'auto'; // Timer arriba en F1
+        timer.style.top = '10%'; timer.style.bottom = 'auto';
         timer.style.display = 'block';
         document.getElementById('score-box').style.display = 'block';
         document.getElementById('lives-box').style.display = 'flex';
         document.getElementById('gas-box').style.display = 'none';
-        tiempo = 50; 
+        tiempo = 50; f1Finalizado = false; modoPuente = false; carril = 1;
         audio.bg1.volume = 1; audio.bg1.loop = true; audio.bg1.play();
         actualizarVidasUI();
         estado = 'JUGANDO_F1';
+    }
+
+    function loop() {
+        ctx.clearRect(0, 0, GW, GH);
+        if (estado === 'INICIO') { if(imgs.intro.complete) ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
+
+        if (estado === 'JUGANDO_F1') {
+            // Movimiento del fondo (se para si tiempo <= 0)
+            if (tiempo > 0) scrollY = (scrollY + 14) % GH;
+            const bg = modoPuente ? imgs.puente : imgs.muralla;
+            ctx.drawImage(bg, 0, scrollY - GH, GW, GH); ctx.drawImage(bg, 0, scrollY, GW, GH);
+
+            // Control de carril y animación de salida
+            let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
+            if (tiempo <= 0) {
+                carril = 1; // Bloqueo al centro
+                player.x += (destinoX - player.x) * 0.1;
+                player.speedOut += 0.8; // Aceleración hacia arriba
+                player.y -= player.speedOut;
+                if (player.y < -player.h && !f1Finalizado) {
+                    f1Finalizado = true;
+                    setTimeout(finalizarFase1, 500);
+                }
+            } else {
+                player.x += (destinoX - player.x) * 0.25;
+            }
+
+            if (frameParpadeo > 0) { frameParpadeo--; if (Math.floor(frameParpadeo / 5) % 2 === 0) ctx.globalAlpha = 0.3; }
+            ctx.drawImage(imgs[vehiculo], player.x, player.y, player.w, player.h); ctx.globalAlpha = 1.0;
+
+            // Obstáculos
+            for (let i = obstaculos.length - 1; i >= 0; i--) {
+                let o = obstaculos[i]; 
+                if (tiempo > 0) o.y += 13;
+                let tam = (o.tipo === 'guardia') ? 150 : 110;
+                ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
+                if (tiempo > 0 && player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
+                    if(o.tipo === 'pollo') { score += 100; audio.point.play(); document.getElementById('score').innerText = score; } 
+                    else { vidas--; audio.crash.currentTime = 0; audio.crash.play(); frameParpadeo = 40; actualizarVidasUI(); if(vidas <= 0) location.reload(); }
+                    obstaculos.splice(i, 1);
+                }
+            }
+
+            if (tiempo > 0) {
+                tiempo -= 1/60;
+                if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } // Inicia puente justo al llegar a 0
+            }
+            document.getElementById('timer-display').innerText = Math.ceil(tiempo);
+        }
+
+        // --- LÓGICA FASE 2 (Igual que antes pero con cronómetro abajo) ---
+        if (estado === 'JUGANDO_F2') {
+            let prog = framesF2 / 6000; if (prog < 1) framesF2++;
+            tiempo = 50 - (prog * 50); document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
+            const altJ = GH * 0.45; const margS = (GH - altJ) / 2;
+            if(imgs.fondoF2.complete) {
+                let ratio = imgs.fondoF2.width / imgs.fondoF2.height;
+                let aF = altJ * ratio; ctx.drawImage(imgs.fondoF2, -(prog * (aF - GW)), margS, aF, altJ);
+            }
+            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, margS); ctx.fillRect(0, margS + altJ, GW, GH);
+            itemsF2.forEach(it => {
+                if(!it.rec && framesF2 >= it.fTarget - 180) {
+                    it.x -= (GW / 90);
+                    let yPos = (margS + altJ) - it.h - it.yB;
+                    ctx.drawImage(it.img, it.x, yPos, it.w, it.h);
+                    if(player.x < it.x+it.w-20 && player.x+100 > it.x+20 && player.y < yPos+it.h-20 && player.y+160 > yPos+20) {
+                        it.rec = true;
+                        if(it.tipo==='pollo' || it.tipo==='comida'){ score+=100; audio.point.play(); }
+                        if(it.tipo==='bueno'){ gas=Math.min(100, gas+15); audio.bueno.play(); }
+                        if(it.tipo==='malo' || it.tipo==='veneno'){ gas-=10; audio.malo.play(); }
+                        document.getElementById('score').innerText = score;
+                        document.getElementById('gas-value').innerText = Math.floor(gas);
+                    }
+                }
+            });
+            let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
+            if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
+            let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
+            ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
+            if(gas <= 0) location.reload();
+            if(prog >= 1) {
+                estado = 'VIDEO2'; canvas.style.display = 'none';
+                document.getElementById('timer-display').style.display = 'none';
+                document.getElementById('score-box').style.display = 'none';
+                document.getElementById('gas-box').style.display = 'none';
+                const v2 = document.getElementById('video-fase2'); 
+                v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
+                v2.style.display = 'block'; v2.play();
+                v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
+                v2.onended = () => location.reload();
+            }
+        }
+        requestAnimationFrame(loop);
     }
 
     function finalizarFase1() {
@@ -151,15 +244,8 @@
         const vid = document.getElementById('video-fase1');
         vid.src = (vehiculo === 'motero') ? 'moto_final.mp4' : 'coche_final.mp4';
         vid.style.display = 'block'; vid.play();
-        
-        vid.ontimeupdate = () => {
-            if (vid.duration - vid.currentTime < 2.5) { fadeOutAudio(audio.bg1, 2000); vid.ontimeupdate = null; }
-        };
-
-        vid.onended = () => {
-            vid.style.display = 'none';
-            document.getElementById('screen-concierto').style.display = 'flex';
-        };
+        vid.ontimeupdate = () => { if (vid.duration - vid.currentTime < 2.5) { fadeOutAudio(audio.bg1, 2000); vid.ontimeupdate = null; } };
+        vid.onended = () => { vid.style.display = 'none'; document.getElementById('screen-concierto').style.display = 'flex'; };
     }
 
     window.mostrarTutorial2 = function() {
@@ -172,17 +258,13 @@
     window.iniciarJuegoFase2 = function() {
         document.getElementById('tut2').style.display = 'none';
         const timer = document.getElementById('timer-display');
-        timer.style.top = 'auto'; timer.style.bottom = '5%'; // Timer abajo en F2
+        timer.style.top = 'auto'; timer.style.bottom = '5%';
         timer.style.display = 'block';
-        
         document.getElementById('score-box').style.display = 'block';
-        const gasBox = document.getElementById('gas-box');
-        gasBox.style.top = '20px'; gasBox.style.bottom = 'auto'; // Gas arriba en F2
-        gasBox.style.display = 'block';
+        document.getElementById('gas-box').style.display = 'block';
         document.getElementById('lives-box').style.display = 'none';
-        
         gas = 100; framesF2 = 0; itemsF2 = []; tiempo = 50;
-        player.x = 80; player.y = GH * 0.7;
+        player.x = 80; player.y = GH * 0.7; player.speedOut = 0;
         generarItemsF2();
         audio.bg2.volume = 1; audio.bg2.loop = true; audio.bg2.play();
         estado = 'JUGANDO_F2';
@@ -205,95 +287,22 @@
         }
     }
 
-    function loop() {
-        ctx.clearRect(0, 0, GW, GH);
-        if (estado === 'INICIO') { if(imgs.intro.complete) ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
-
-        if (estado === 'JUGANDO_F1') {
-            scrollY = (scrollY + 14) % GH;
-            const bg = modoPuente ? imgs.puente : imgs.muralla;
-            ctx.drawImage(bg, 0, scrollY - GH, GW, GH); ctx.drawImage(bg, 0, scrollY, GW, GH);
-            let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
-            player.x += (destinoX - player.x) * 0.25;
-            if (frameParpadeo > 0) { frameParpadeo--; if (Math.floor(frameParpadeo / 5) % 2 === 0) ctx.globalAlpha = 0.3; }
-            ctx.drawImage(imgs[vehiculo], player.x, player.y, player.w, player.h); ctx.globalAlpha = 1.0;
-
-            for (let i = obstaculos.length - 1; i >= 0; i--) {
-                let o = obstaculos[i]; o.y += 13;
-                let tam = (o.tipo === 'guardia') ? 150 : 110;
-                ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
-                if (player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
-                    if(o.tipo === 'pollo') { score += 100; audio.point.play(); document.getElementById('score').innerText = score; } 
-                    else { vidas--; audio.crash.currentTime = 0; audio.crash.play(); frameParpadeo = 40; actualizarVidasUI(); if(vidas <= 0) location.reload(); }
-                    obstaculos.splice(i, 1);
-                }
-            }
-            tiempo -= 1/60; document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
-            if(tiempo <= 5) modoPuente = true;
-            if(tiempo <= 0) finalizarFase1();
-        }
-
-        if (estado === 'JUGANDO_F2') {
-            let prog = framesF2 / 6000; if (prog < 1) framesF2++;
-            tiempo = 50 - (prog * 50); document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
-            const altJ = GH * 0.45; const margS = (GH - altJ) / 2;
-            if(imgs.fondoF2.complete) {
-                let ratio = imgs.fondoF2.width / imgs.fondoF2.height;
-                let aF = altJ * ratio; ctx.drawImage(imgs.fondoF2, -(prog * (aF - GW)), margS, aF, altJ);
-            }
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, margS); ctx.fillRect(0, margS + altJ, GW, GH);
-
-            itemsF2.forEach(it => {
-                if(!it.rec && framesF2 >= it.fTarget - 180) {
-                    it.x -= (GW / 90);
-                    let yPos = (margS + altJ) - it.h - it.yB;
-                    ctx.drawImage(it.img, it.x, yPos, it.w, it.h);
-                    if(player.x < it.x+it.w-20 && player.x+100 > it.x+20 && player.y < yPos+it.h-20 && player.y+160 > yPos+20) {
-                        it.rec = true;
-                        if(it.tipo==='pollo' || it.tipo==='comida'){ score+=100; audio.point.play(); }
-                        if(it.tipo==='bueno'){ gas=Math.min(100, gas+15); audio.bueno.play(); }
-                        if(it.tipo==='malo' || it.tipo==='veneno'){ gas-=10; audio.malo.play(); }
-                        document.getElementById('score').innerText = score;
-                        document.getElementById('gas-value').innerText = Math.floor(gas);
-                    }
-                }
-            });
-
-            let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
-            if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
-            
-            let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
-            ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
-
-            if(gas <= 0) location.reload();
-            if(prog >= 1) {
-                estado = 'VIDEO2'; canvas.style.display = 'none';
-                document.getElementById('timer-display').style.display = 'none';
-                document.getElementById('score-box').style.display = 'none';
-                document.getElementById('gas-box').style.display = 'none';
-                
-                const v2 = document.getElementById('video-fase2'); 
-                v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
-                v2.style.display = 'block'; v2.play();
-                
-                v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
-                v2.onended = () => location.reload();
-            }
-        }
-        requestAnimationFrame(loop);
-    }
-
     window.addEventListener('touchstart', (e) => {
         if (estado === 'INICIO') { document.getElementById('selection').style.display = 'flex'; estado = 'SELECCION'; }
-        else if (estado === 'JUGANDO_F1' && !modoPuente) {
+        else if (estado === 'JUGANDO_F1' && tiempo > 0) {
             if(e.touches[0].clientX < window.innerWidth/2) { if(carril > 0) carril--; } else { if(carril < 2) carril++; }
         } else if (estado === 'JUGANDO_F2') { if (player.saltos < 2) { player.vy = -14; player.saltos++; } }
     });
 
     setInterval(() => { 
-        if(estado === 'JUGANDO_F1' && !modoPuente) {
-            const r = Math.random(); let t = 'guardia';
-            if (r < 0.15) t = 'pollo'; else if (r < 0.30) t = 'pizza';
+        if(estado === 'JUGANDO_F1' && tiempo > 0) {
+            const r = Math.random();
+            let t = 'guardia';
+            // CAMBIO: Probabilidades iguales (33% cada uno)
+            if (r < 0.33) t = 'pollo'; 
+            else if (r < 0.66) t = 'pizza'; 
+            else t = 'guardia';
+            
             let tSize = (t === 'guardia') ? 150 : 110;
             obstaculos.push({ x: (GW/3)*Math.floor(Math.random()*3) + (GW/6)-tSize/2, y: -150, tipo: t }); 
         } 
