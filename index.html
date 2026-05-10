@@ -11,10 +11,11 @@
 
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
-        .ui-box { position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 80px; text-align: center; }
-        #score-box { right: 20px; top: 20px; } 
-        /* Ajuste: Gas debajo de Puntos en Fase 2 */
-        #gas-box { right: 20px; top: 80px; } 
+        .ui-box { position: absolute; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 10px 15px; border-radius: 10px; color: #fff; display: none; z-index: 10; font-size: 2vh; min-width: 120px; text-align: center; }
+        
+        /* Marcadores centrados para Fase 2 */
+        #score-box { left: 50%; transform: translateX(-50%); top: 20px; } 
+        #gas-box { left: 50%; transform: translateX(-50%); top: 85px; } 
         
         #lives-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); border: 2px solid #8e44ad; padding: 5px; border-radius: 10px; display: none; gap: 5px; z-index: 10; } 
         .vida-slot { position: relative; width: 4vh; height: 4vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
@@ -45,7 +46,7 @@
         <div id="selection">  
             <div style="color: #8e44ad; font-weight: bold; font-size: 3.2vh; margin-top: 20px;">
                 ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO...
-                <div style="color:white; font-size: 5vh; margin-top: 15px; letter-spacing: 2px;">SIN CITY</div>
+                <div style="color:white; font-size: 5.5vh; margin-top: 20px; letter-spacing: 3px; font-weight: 900;">SIN CITY</div>
             </div>
             <div class="option-container">
                 <div onclick="mostrarTut1('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
@@ -90,12 +91,10 @@
         bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
         bg1: null, bg2: null
     };
-    audio.crash.volume = 1.0;
 
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
     let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
-    
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -184,7 +183,6 @@
                     obstaculos.splice(i, 1);
                 }
             }
-
             if (tiempo > 0) {
                 tiempo -= 1/60;
                 if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } 
@@ -295,15 +293,17 @@
     setInterval(() => { 
         if(estado === 'JUGANDO_F1' && tiempo > 0) {
             const r = Math.random();
-            let t = 'guardia';
-            if (r < 0.33) t = 'pollo'; 
-            else if (r < 0.66) t = 'pizza'; 
-            else t = 'guardia';
-            
+            let t = (r < 0.33) ? 'pollo' : (r < 0.66) ? 'pizza' : 'guardia';
             let tSize = (t === 'guardia') ? 150 : 110;
             obstaculos.push({ x: (GW/3)*Math.floor(Math.random()*3) + (GW/6)-tSize/2, y: -150, tipo: t }); 
         } 
     }, 900);
+
+    // Registro de Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+    }
+
     loop();
 </script>  
 </body>  
