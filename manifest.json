@@ -1,0 +1,16 @@
+{
+  "name": "Chicken Run 10th Anniversary",
+  "short_name": "ChickenRun",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#8e44ad",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icono_app.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
