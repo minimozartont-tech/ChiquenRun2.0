@@ -3,23 +3,92 @@
 <head>  
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
-    <title>ChiquenRun - 10Th Anniversary</title>  
+    <title>ChiquenRun - 10Th Anniversary</title>
+    
     <link rel="manifest" href="manifest.json">
+    <meta property="og:title" content="ChiquenRun - 10Th Anniversary">
+    <meta property="og:image" content="icono_app.png">
 
     <style>  
-        * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        /* Evita que se seleccione texto o aparezcan cuadros azules al tocar */
+        * { 
+            -webkit-user-select: none; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
 
-        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }  
-        #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
-        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
+        body { 
+            margin: 0; 
+            background: #000; 
+            overflow: hidden; 
+            touch-action: none; 
+            font-family: 'Arial', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }  
 
-        #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
+        #game-container { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            max-width: 480px; 
+            aspect-ratio: 480 / 854; 
+            background: #000; 
+            overflow: hidden; 
+        }  
+
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            image-rendering: pixelated; 
+        }  
+
+        /* --- UI Elements --- */
+        #timer-display { 
+            position: absolute; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            color: #8e44ad; 
+            font-size: 8vh; 
+            font-weight: bold; 
+            text-shadow: 3px 3px #000; 
+            display: none; 
+            z-index: 10; 
+        }  
         
-        .ui-box { position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 8px 12px; border-radius: 12px; color: #fff; display: none; z-index: 10; font-size: 1.8vh; font-weight: bold; box-sizing: border-box; }
+        .ui-box { 
+            position: absolute; 
+            background: rgba(0,0,0,0.85); 
+            border: 2px solid #8e44ad; 
+            padding: 8px 12px; 
+            border-radius: 12px; 
+            color: #fff; 
+            display: none; 
+            z-index: 10; 
+            font-size: 1.8vh; 
+            font-weight: bold; 
+            box-sizing: border-box; 
+        }
         
         #score-box { right: 15px; top: 15px; min-width: 120px; text-align: center; } 
-        #lives-box { left: 15px; top: 15px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 5px 8px; border-radius: 12px; align-items: center; }
+        #lives-box { 
+            left: 15px; 
+            top: 15px; 
+            display: none; 
+            gap: 5px; 
+            z-index: 10; 
+            position: absolute; 
+            background: rgba(0,0,0,0.85); 
+            border: 2px solid #8e44ad; 
+            padding: 5px 8px; 
+            border-radius: 12px; 
+            align-items: center; 
+        }
         
+        /* Ajustes UI Fase 2 */
         .fase2-ui { left: 50% !important; right: auto !important; transform: translateX(-50%); width: 160px; text-align: center !important; }
         #score-box.fase2-ui { top: 15px; }
         #gas-box.fase2-ui { top: 75px; } 
@@ -28,13 +97,79 @@
         .vida-icon { width: 85%; height: auto; }
         .cross { position: absolute; inset: 0; color: #ff0000; font-size: 3.5vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; text-shadow: 1px 1px #000; }
 
-        #selection { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: flex-start; color: white; z-index: 100; padding: 40px 20px; text-align: center; }  
-        .option-container { display: flex; flex-direction: row; gap: 15px; justify-content: center; width: 100%; margin-top: auto; margin-bottom: 40px; }
-        .veh-btn { border: 3px solid #ffff00; padding: 15px 5px; border-radius: 20px; background: rgba(255,255,0,0.1); color: #ffff00; font-weight: bold; flex: 1; text-align: center; font-size: 1.8vh; cursor: pointer; }
+        /* --- Pantallas de Selección y Tutorial --- */
+        #selection { 
+            position: absolute; 
+            inset: 0; 
+            background: rgba(0,0,0,0.95); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start; 
+            color: white; 
+            z-index: 100; 
+            padding: 40px 20px; 
+            text-align: center; 
+        }  
+
+        .option-container { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 15px; 
+            justify-content: center; 
+            width: 100%; 
+            margin-top: auto; 
+            margin-bottom: 40px; 
+        }
+
+        .veh-btn { 
+            border: 3px solid #ffff00; 
+            padding: 15px 5px; 
+            border-radius: 20px; 
+            background: rgba(255,255,0,0.1); 
+            color: #ffff00; 
+            font-weight: bold; 
+            flex: 1; 
+            text-align: center; 
+            font-size: 1.8vh; 
+            cursor: pointer; 
+        }
+
         .veh-btn img { height: 14vh; margin: 10px 0; object-fit: contain; }
-        #screen-concierto { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 110; text-align: center; }
-        .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
-        .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
+
+        #screen-concierto { 
+            position: absolute; 
+            inset: 0; 
+            background: #000; 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 110; 
+            text-align: center; 
+        }
+
+        .tutorial-overlay { 
+            position: absolute; 
+            inset: 0; 
+            background-size: contain; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            background-color: #000; 
+            z-index: 150; 
+            display: none; 
+        }  
+
+        .video-overlay { 
+            position: fixed; 
+            inset: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            display: none; 
+            z-index: 1000; 
+            object-fit: contain; 
+        }
     </style>
 </head>  
 <body>  
@@ -42,10 +177,12 @@
     <div id="game-container">
         <div id="tut1" class="tutorial-overlay" onclick="iniciarJuegoFase1()"></div>  
         <div id="tut2" class="tutorial-overlay" onclick="iniciarJuegoFase2()"></div>
+        
         <div id="screen-concierto" onclick="mostrarTutorial2()">  
             <h1 style="color: #00ff00; font-size: 4vh;">🎸 TOCA AQUÍ 🎸</h1>  
             <p style="color:white">PARA CHEGAR AO CONCERTO</p>  
         </div>
+
         <div id="selection">  
             <div style="color: #8e44ad; font-weight: bold; font-size: 3.2vh; margin-top: 20px;">
                 ESCOLLE O TEU VEHÍCULO<br>PARA CHEGAR AO...
@@ -56,6 +193,7 @@
                 <div onclick="intentarSeleccion('coche')" class="veh-btn">COCHE<br><img src="coche.png"><br>BOCHO</div>  
             </div>
         </div>  
+
         <div id="timer-display">50</div>  
         <div id="score-box" class="ui-box">PUNTOS: <span id="score">0</span></div>  
         <div id="gas-box" class="ui-box fase2-ui">GAS: <span id="gas-value">100</span>%</div>
@@ -64,6 +202,7 @@
             <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
             <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
         </div>  
+
         <canvas id="gameCanvas"></canvas>  
     </div>
 
@@ -95,7 +234,8 @@
     let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
     let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
     let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
-    let seleccionHabilitada = false;
+    let seleccionHabilitada = false; 
+
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -116,6 +256,7 @@
         }
     }
 
+    // Prevención de clics fantasma en selección
     window.intentarSeleccion = function(v) {
         if (!seleccionHabilitada) return;
         mostrarTut1(v);
@@ -166,7 +307,7 @@
                 carril = 1; 
                 player.x += (destinoX - player.x) * 0.08;
                 if(Math.abs(player.x - destinoX) < 10) {
-                    player.speedOut += 0.4;
+                    player.speedOut += 0.4; // Salida del puente suavizada
                     player.y -= player.speedOut;
                 }
                 if (player.y < -player.h && !f1Finalizado) {
@@ -190,12 +331,11 @@
                         score += 100; 
                         audio.point.play(); 
                         document.getElementById('score').innerText = score; 
-                    } 
-                    else { 
+                    } else { 
                         vidas--; 
                         audio.crash.currentTime = 0; 
                         audio.crash.play(); 
-                        if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 1
+                        if (navigator.vibrate) navigator.vibrate(200); // Vibración impacto
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
                         if(vidas <= 0) location.reload(); 
@@ -219,6 +359,7 @@
                 let aF = altJ * ratio; ctx.drawImage(imgs.fondoF2, -(prog * (aF - GW)), margS, aF, altJ);
             }
             ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, margS); ctx.fillRect(0, margS + altJ, GW, GH);
+            
             itemsF2.forEach(it => {
                 if(!it.rec && framesF2 >= it.fTarget - 180) {
                     it.x -= (GW / 90);
@@ -231,7 +372,7 @@
                         if(it.tipo==='malo' || it.tipo==='veneno'){ 
                             gas-=10; 
                             audio.malo.play(); 
-                            if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 2
+                            if (navigator.vibrate) navigator.vibrate(200); // Vibración impacto F2
                         }
                         document.getElementById('score').innerText = score;
                         document.getElementById('gas-value').innerText = Math.floor(gas);
@@ -242,6 +383,7 @@
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
+            
             if(gas <= 0) location.reload();
             if(prog >= 1) {
                 estado = 'VIDEO2'; canvas.style.display = 'none';
@@ -313,7 +455,7 @@
             document.getElementById('selection').style.display = 'flex'; 
             estado = 'SELECCION'; 
             seleccionHabilitada = false;
-            setTimeout(() => { seleccionHabilitada = true; }, 400); 
+            setTimeout(() => { seleccionHabilitada = true; }, 400); // Cooldown para evitar selección accidental
         }
         else if (estado === 'JUGANDO_F1' && tiempo > 0) {
             if(e.touches[0].clientX < window.innerWidth/2) { if(carril > 0) carril--; } else { if(carril < 2) carril++; }
@@ -323,19 +465,4 @@
     setInterval(() => { 
         if(estado === 'JUGANDO_F1' && tiempo > 0) {
             const r = Math.random();
-            let t = (r < 0.33) ? 'pollo' : (r < 0.66) ? 'pizza' : 'guardia';
-            let tSize = (t === 'guardia') ? 150 : 110;
-            obstaculos.push({ x: (GW/3)*Math.floor(Math.random()*3) + (GW/6)-tSize/2, y: -150, tipo: t }); 
-        } 
-    }, 900);
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { 
-          navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err)); 
-      });
-    }
-
-    loop();
-</script>  
-</body>  
-</html>
+            let t = (r < 0.33) ? 'pollo' : (r < 0.66) ? '
