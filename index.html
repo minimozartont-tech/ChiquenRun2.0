@@ -4,7 +4,15 @@
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
     <title>Festival Run - Edición Concierto</title>  
+    
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <meta property="og:title" content="Festival Run - Edición Concierto">
+    <meta property="og:image" content="icono_app.png">
+    <meta property="og:type" content="website">
 
     <style>  
         * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -195,7 +203,7 @@
                         vidas--; 
                         audio.crash.currentTime = 0; 
                         audio.crash.play(); 
-                        if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 1
+                        if (navigator.vibrate) navigator.vibrate(200); 
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
                         if(vidas <= 0) location.reload(); 
@@ -231,7 +239,7 @@
                         if(it.tipo==='malo' || it.tipo==='veneno'){ 
                             gas-=10; 
                             audio.malo.play(); 
-                            if (navigator.vibrate) navigator.vibrate(200); // VIBRACIÓN FASE 2
+                            if (navigator.vibrate) navigator.vibrate(200);
                         }
                         document.getElementById('score').innerText = score;
                         document.getElementById('gas-value').innerText = Math.floor(gas);
@@ -308,6 +316,17 @@
         }
     }
 
+    // --- SISTEMA DE INSTALACIÓN ---
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Lanzamos el aviso a los 4 segundos de entrar
+        setTimeout(() => {
+            if (deferredPrompt) deferredPrompt.prompt();
+        }, 4000);
+    });
+
     window.addEventListener('touchstart', (e) => {
         if (estado === 'INICIO') { 
             document.getElementById('selection').style.display = 'flex'; 
@@ -331,7 +350,16 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => { 
-          navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err)); 
+          navigator.serviceWorker.register('sw.js').then(reg => {
+              reg.onupdatefound = () => {
+                  const installingWorker = reg.installing;
+                  installingWorker.onstatechange = () => {
+                      if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          if (confirm("¡Nueva versión disponible! ¿Actualizar?")) window.location.reload();
+                      }
+                  };
+              };
+          }); 
       });
     }
 
