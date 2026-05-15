@@ -44,7 +44,7 @@
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
 
-        /* PANTALLA FIN DE JUEGO ADICIONAL */
+        /* PANTALLA FIN DE JUEGO MANTENIENDO EL Z-INDEX CORRECTO */
         #screen-gameover { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; text-align: center; }
     </style>
 </head>  
@@ -116,8 +116,8 @@
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
-    // FUNCIÓN DE ABORDAJE PARA MOSTRAR MARCADOR ANTES DE REINICIAR
-    function mostrarPantallaFinal(esVictoria) {
+    // DECLARACIÓN GLOBAL CORRECTA ANTES DE SER USADA EN EL LOOP
+    window.mostrarPantallaFinal = function(esVictoria) {
         estado = 'PANTALLA_FINAL';
         if (audio.bg1 && audio.bg1.pause) audio.bg1.pause();
         if (audio.bg2 && audio.bg2.pause) audio.bg2.pause();
@@ -127,7 +127,7 @@
         document.getElementById('gas-box').style.display = 'none';
         document.getElementById('lives-box').style.display = 'none';
 
-        document.getElementById('go-score').innerText = `${score} PTS`;
+        document.getElementById('go-score').innerText = score + " PTS";
         if(esVictoria) {
             document.getElementById('go-title').innerText = "¡CONCERTO COMPLETADO!";
             document.getElementById('go-title').style.color = "#00ff00";
@@ -137,7 +137,7 @@
         }
 
         document.getElementById('screen-gameover').style.display = 'flex';
-        setTimeout(() => { location.reload(); }, 4000);
+        setTimeout(function() { location.reload(); }, 4000);
     }
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -240,7 +240,7 @@
                         if (navigator.vibrate) navigator.vibrate(200); 
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
-                        if(vidas <= 0) { mostrarPantallaFinal(false); return; } 
+                        if(vidas <= 0) { window.mostrarPantallaFinal(false); return; } 
                     }
                     obstaculos.splice(i, 1);
                 }
@@ -284,7 +284,7 @@
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
-            if(gas <= 0) { mostrarPantallaFinal(false); return; }
+            if(gas <= 0) { window.mostrarPantallaFinal(false); return; }
             if(prog >= 1) {
                 estado = 'VIDEO2'; canvas.style.display = 'none';
                 document.getElementById('timer-display').style.display = 'none';
@@ -294,7 +294,7 @@
                 v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
                 v2.style.display = 'block'; v2.play();
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
-                v2.onended = () => { v2.style.display = 'none'; mostrarPantallaFinal(true); };
+                v2.onended = () => { v2.style.display = 'none'; window.mostrarPantallaFinal(true); };
             }
         }
         requestAnimationFrame(loop);
@@ -363,5 +363,4 @@
     window.addEventListener('touchstart', (e) => {
         if (estado === 'INICIO') { 
             document.getElementById('selection').style.display = 'flex'; 
-            estado = 'SELECCION'; 
-            seleccion 
+  
