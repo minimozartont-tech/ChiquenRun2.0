@@ -3,14 +3,14 @@
 <head>  
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
-    <title>Festival Run - Edición Concierto</title>  
+    <title>ChiquenRun - 10Th Anniversary</title>  
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#8e44ad">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     
-    <meta property="og:title" content="Festival Run - Edición Concierto">
+    <meta property="og:title" content="ChiquenRun - 10Th Anniversary">
     <meta property="og:image" content="icono_app.png">
     <meta property="og:type" content="website">
 
@@ -44,7 +44,7 @@
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
 
-        /* --- NUEVOS ESTILOS RETRO ARCADE (RÉCORDS) --- */
+        /* --- PANTALLAS DE RÉCORDS --- */
         #arcade-input-screen { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #ffff00; font-family: 'Courier New', monospace; z-index: 2000; text-align: center; padding: 20px; }
         .letters-container { display: flex; gap: 20px; margin: 40px 0; font-size: 8vh; font-weight: bold; }
         .letter-box { display: flex; flex-direction: column; align-items: center; width: 60px; }
@@ -137,9 +137,10 @@
     const imgs = {};
     for (let k in assets) { imgs[k] = new Image(); imgs[k].src = assets[k]; }
 
+    // Corregidos los nombres según tus archivos reales de GitHub (.mp3)
     const audio = {
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
-        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
+        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.mp3'),
         bg1: null, bg2: null
     };
 
@@ -149,27 +150,47 @@
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
-    // --- LÓGICA DE TABLA DE RÉCORDS (LOCALSTORAGE) ---
-    let initLetters = [65, 65, 65]; // Código ASCII para 'A', 'A', 'A'
+    // --- LÓGICA DE RÉCORDS EVITANDO ERRORES DE CRASH EN FACEBOOK ---
+    let initLetters = [65, 65, 65]; 
     let activeLetterIdx = 0;
+    let fallbackRecords = [
+        {name: 'CHU', score: 1500}, {name: 'BOC', score: 1000}, {name: 'PLY', score: 800}, {name: 'GDR', score: 500}, {name: 'AAA', score: 100}
+    ];
+
+    function getRecords() {
+        try {
+            let data = localStorage.getItem('festival_run_records');
+            return data ? JSON.parse(data) : fallbackRecords;
+        } catch(e) {
+            // Si el navegador interno de Facebook bloquea localStorage, usamos la lista temporal
+            return fallbackRecords;
+        }
+    }
+
+    function setRecords(recordsList) {
+        try {
+            localStorage.setItem('festival_run_records', JSON.stringify(recordsList));
+        } catch(e) {
+            // Si falla en Facebook, lo guardamos solo en memoria para evitar colgar el juego
+            fallbackRecords = recordsList;
+        }
+    }
 
     function renderLeaderboard() {
-        let records = JSON.parse(localStorage.getItem('festival_run_records')) || [
-            {name: 'CHU', score: 1500}, {name: 'BOC', score: 1000}, {name: 'PLY', score: 800}, {name: 'GDR', score: 500}, {name: 'AAA', score: 100}
-        ];
-        // Ordenar de mayor a menor por si acaso
+        let records = getRecords();
         records.sort((a, b) => b.score - a.score);
-        localStorage.setItem('festival_run_records', JSON.stringify(records.slice(0, 5)));
+        setRecords(records.slice(0, 5));
         
         const rowsContainer = document.getElementById('leaderboard-rows');
-        rowsContainer.innerHTML = '';
-        records.slice(0, 5).forEach((r, idx) => {
-            rowsContainer.innerHTML += `<div class="lb-row"><span>${idx+1}. ${r.name}</span><span>${r.score} PTS</span></div>`;
-        });
+        if (rowsContainer) {
+            rowsContainer.innerHTML = '';
+            records.slice(0, 5).forEach((r, idx) => {
+                rowsContainer.innerHTML += `<div class="lb-row"><span>${idx+1}. ${r.name}</span><span>${r.score} PTS</span></div>`;
+            });
+        }
     }
 
     function triggerGameOver() {
-        // Pausar músicas de fondo
         if(audio.bg1) audio.bg1.pause();
         if(audio.bg2) audio.bg2.pause();
         
@@ -184,29 +205,28 @@
     }
 
     window.changeLetter = function(boxIdx, dir) {
-        // Quitar foco visual previo
         document.getElementById(`l${activeLetterIdx}`).classList.remove('active-letter');
         activeLetterIdx = boxIdx;
         document.getElementById(`l${activeLetterIdx}`).classList.add('active-letter');
 
         let currentCode = initLetters[boxIdx];
         currentCode += dir;
-        if(currentCode < 65) currentCode = 90; // Envuelve de 'A' a 'Z'
-        if(currentCode > 90) currentCode = 65; // Envuelve de 'Z' a 'A'
+        if(currentCode < 65) currentCode = 90; 
+        if(currentCode > 90) currentCode = 65; 
         initLetters[boxIdx] = currentCode;
         document.getElementById(`l${boxIdx}`).innerText = String.fromCharCode(currentCode);
     }
 
     window.saveRecord = function() {
         let finalName = String.fromCharCode(initLetters[0]) + String.fromCharCode(initLetters[1]) + String.fromCharCode(initLetters[2]);
-        let records = JSON.parse(localStorage.getItem('festival_run_records')) || [];
+        let records = getRecords();
         records.push({name: finalName, score: score});
         records.sort((a, b) => b.score - a.score);
-        localStorage.setItem('festival_run_records', JSON.stringify(records.slice(0, 5)));
-        location.reload(); // Ahora sí reinicia tras guardar
+        setRecords(records.slice(0, 5));
+        location.reload(); 
     }
 
-    // Inicializar tabla al arrancar
+    // Inicializar de forma segura
     renderLeaderboard();
 
     function fadeOutAudio(audioElement, duration = 2000) {
@@ -250,7 +270,7 @@
     }
 
     window.iniciarJuegoFase1 = function() {
-        document.getElementById('leaderboard-overlay').style.display = 'none'; // Quitar tabla al jugar
+        document.getElementById('leaderboard-overlay').style.display = 'none'; 
         document.getElementById('tut1').style.display = 'none';
         const timer = document.getElementById('timer-display');
         timer.style.top = '10%'; timer.style.display = 'block';
@@ -310,7 +330,7 @@
                         if (navigator.vibrate) navigator.vibrate(200); 
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
-                        if(vidas <= 0) { triggerGameOver(); return; } // Cambio por pantalla de récords
+                        if(vidas <= 0) { triggerGameOver(); return; } 
                     }
                     obstaculos.splice(i, 1);
                 }
@@ -348,9 +368,4 @@
                         document.getElementById('score').innerText = score;
                         document.getElementById('gas-value').innerText = Math.floor(gas);
                     }
-                }
-            });
-            let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
-            if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
-            let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
-            
+  
