@@ -3,14 +3,14 @@
 <head>  
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
-    <title>ChiquenRun - 10Th Anniversary</title>  
+    <title>Festival Run - Edición Concierto</title>  
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#8e44ad">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     
-    <meta property="og:title" content="ChiquenRun - 10Th Anniversary">
+    <meta property="og:title" content="Festival Run - Edición Concierto">
     <meta property="og:image" content="icono_app.png">
     <meta property="og:type" content="website">
 
@@ -21,24 +21,18 @@
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
-        /* Pantalla de carga temporal ultraligera */
-        #loading-screen { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; z-index: 5000; font-family: monospace; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #8e44ad; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         #timer-display { position: absolute; left: 50%; transform: translateX(-50%); color: #8e44ad; font-size: 8vh; font-weight: bold; text-shadow: 3px 3px #000; display: none; z-index: 10; }  
         
         .ui-box { position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 8px 12px; border-radius: 12px; color: #fff; display: none; z-index: 10; font-size: 1.8vh; font-weight: bold; box-sizing: border-box; }
         
         #score-box { right: 15px; top: 15px; min-width: 120px; text-align: center; } 
-        #gas-box { left: 15px; top: 15px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 5px 8px; border-radius: 12px; align-items: center; }
+        #lives-box { left: 15px; top: 15px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 5px 8px; border-radius: 12px; align-items: center; }
         
         .fase2-ui { left: 50% !important; right: auto !important; transform: translateX(-50%); width: 160px; text-align: center !important; }
         #score-box.fase2-ui { top: 15px; }
         #gas-box.fase2-ui { top: 75px; } 
         
-        #lives-box { left: 15px; top: 15px; display: none; gap: 5px; z-index: 10; position: absolute; background: rgba(0,0,0,0.85); border: 2px solid #8e44ad; padding: 5px 8px; border-radius: 12px; align-items: center; }
-        .vida-slot { position: relative; width: 3.5vh; height: 3.5vh; background: rgba(255,255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
+        .vida-slot { position: relative; width: 3.5vh; height: 3.5vh; background: rgba(255,255,0.1); border-radius: 5px; display: flex; justify-content: center; align-items: center; }
         .vida-icon { width: 85%; height: auto; }
         .cross { position: absolute; inset: 0; color: #ff0000; font-size: 3.5vh; font-weight: bold; display: none; justify-content: center; align-items: center; line-height: 1; text-shadow: 1px 1px #000; }
 
@@ -50,58 +44,278 @@
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
 
-        /* --- PANTALLAS DE RÉCORDS --- */
-        #arcade-input-screen { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #ffff00; font-family: 'Courier New', monospace; z-index: 2000; text-align: center; padding: 20px; }
-        .letters-container { display: flex; gap: 20px; margin: 40px 0; font-size: 8vh; font-weight: bold; }
-        .letter-box { display: flex; flex-direction: column; align-items: center; width: 60px; }
-        .arrow-btn { color: #00ff00; font-size: 4vh; cursor: pointer; padding: 10px; }
-        .active-letter { border-bottom: 5px solid #ff00ff; color: #fff; }
-        #btn-save-record { background: #8e44ad; border: 3px solid #fff; color: white; padding: 15px 30px; font-size: 2.5vh; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        
-        #leaderboard-overlay { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); border: 2px solid #00ff00; border-radius: 10px; padding: 10px; width: 80%; color: #fff; font-family: 'Courier New', monospace; font-size: 1.6vh; text-align: center; z-index: 5; pointer-events: none; display: none; }
-        .lb-title { color: #00ff00; font-weight: bold; margin-bottom: 5px; font-size: 1.8vh; }
-        .lb-row { display: flex; justify-content: space-between; margin: 2px 0; padding: 0 15px; }
+        /* ============================================================
+           ESTILOS HIGHSCORES - ESTILO ARCADE 80s
+           ============================================================ */
+
+        @keyframes arcadeBlink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+        @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+        @keyframes rgbShift { 0%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff,0 0 8px #ffff00} 50%{text-shadow:-2px 0 #ff0000,2px 0 #00ffff,0 0 12px #ffff00} 100%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff,0 0 8px #ffff00} }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.8;transform:scale(1.03)} }
+        @keyframes cursorBlink { 0%,49%{border-right-color:#ffff00} 50%,100%{border-right-color:transparent} }
+        @keyframes rowHighlight { 0%,100%{background:rgba(255,255,0,0.15)} 50%{background:rgba(255,255,0,0.05)} }
+        @keyframes slideIn { from{transform:translateY(-30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+        #screen-highscores {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 200;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        #screen-highscores::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,0,0.015) 3px, rgba(0,255,0,0.015) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #screen-highscores::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: rgba(255,255,255,0.07);
+            animation: scanline 4s linear infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .hs-inner {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            box-sizing: border-box;
+        }
+
+        .hs-title {
+            font-size: 4.5vh;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #ffff00;
+            animation: rgbShift 2s ease-in-out infinite, pulse 1.5s ease-in-out infinite;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .hs-subtitle {
+            font-size: 2vh;
+            color: #ff6600;
+            letter-spacing: 3px;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+        }
+
+        .hs-divider {
+            width: 90%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8e44ad, #ffff00, #8e44ad, transparent);
+            margin-bottom: 14px;
+        }
+
+        .hs-header-row {
+            display: grid;
+            grid-template-columns: 40px 60px 1fr 90px;
+            width: 92%;
+            color: #00ffff;
+            font-size: 1.6vh;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            padding: 0 5px;
+        }
+
+        .hs-row {
+            display: grid;
+            grid-template-columns: 40px 60px 1fr 90px;
+            width: 92%;
+            padding: 5px 5px;
+            border-radius: 6px;
+            margin-bottom: 3px;
+            animation: slideIn 0.3s ease-out both;
+            box-sizing: border-box;
+        }
+
+        .hs-row.rank-1 { background: rgba(255,215,0,0.18); border: 1px solid rgba(255,215,0,0.4); }
+        .hs-row.rank-2 { background: rgba(192,192,192,0.12); border: 1px solid rgba(192,192,192,0.3); }
+        .hs-row.rank-3 { background: rgba(205,127,50,0.12); border: 1px solid rgba(205,127,50,0.3); }
+        .hs-row.is-new { animation: rowHighlight 1s ease-in-out infinite, slideIn 0.3s ease-out both; border: 1px solid #ffff00 !important; }
+
+        .hs-rank { font-size: 1.8vh; font-weight: bold; }
+        .hs-rank.rank-1 { color: #ffd700; }
+        .hs-rank.rank-2 { color: #c0c0c0; }
+        .hs-rank.rank-3 { color: #cd7f32; }
+        .hs-rank.rank-other { color: #888; }
+
+        .hs-name { font-size: 2.2vh; font-weight: bold; color: #ffffff; letter-spacing: 3px; }
+        .hs-name.is-new { color: #ffff00; }
+
+        .hs-score { font-size: 1.9vh; color: #00ff88; text-align: right; font-weight: bold; }
+
+        .hs-vehicle { font-size: 1.5vh; color: #ff6600; text-align: center; }
+
+        .hs-insert-btn {
+            margin-top: auto;
+            margin-bottom: 10px;
+            background: #8e44ad;
+            color: #fff;
+            border: 3px solid #ffff00;
+            border-radius: 15px;
+            padding: 12px 30px;
+            font-size: 2.2vh;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .hs-blink {
+            animation: arcadeBlink 0.8s step-start infinite;
+            color: #ffff00;
+            font-size: 1.8vh;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        /* ============================================================
+           PANTALLA INSERTAR NOMBRE
+           ============================================================ */
+
+        #screen-nombre {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.97);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 210;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .nombre-titulo {
+            font-size: 3.5vh;
+            font-weight: bold;
+            color: #ffff00;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            animation: arcadeBlink 1s step-start infinite;
+        }
+
+        .nombre-subtitulo {
+            font-size: 2vh;
+            color: #00ffff;
+            margin-bottom: 4px;
+        }
+
+        .nombre-puntos {
+            font-size: 3vh;
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .nombre-letras {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .nombre-letra {
+            width: 11vw;
+            max-width: 60px;
+            height: 11vw;
+            max-height: 60px;
+            background: #111;
+            border: 3px solid #8e44ad;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5vh;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 0;
+        }
+
+        .nombre-letra.activa {
+            border-color: #ffff00;
+            background: #1a1a00;
+            animation: cursorBlink 0.6s step-start infinite;
+            border-right-width: 5px;
+        }
+
+        .teclado-arcade {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            width: 95%;
+            max-width: 420px;
+            margin-bottom: 16px;
+        }
+
+        .tecla {
+            background: #1a0030;
+            border: 2px solid #8e44ad;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 2.5vh;
+            font-weight: bold;
+            padding: 10px 0;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.1s, transform 0.1s;
+            -webkit-user-select: none;
+        }
+
+        .tecla:active { background: #8e44ad; transform: scale(0.9); }
+
+        .tecla-borrar {
+            grid-column: span 3;
+            background: #300010;
+            border-color: #ff4466;
+            color: #ff4466;
+            font-size: 2vh;
+        }
+
+        .tecla-ok {
+            grid-column: span 6;
+            background: #003020;
+            border-color: #00ff88;
+            color: #00ff88;
+            font-size: 2.2vh;
+        }
+
+        .nombre-instruccion {
+            color: #888;
+            font-size: 1.7vh;
+            margin-top: 6px;
+        }
     </style>
 </head>  
 <body>  
 
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <div style="font-size: 2vh; letter-spacing: 1px;">PREPARANDO XOGO...</div>
-    </div>
-
     <div id="game-container">
-        <div id="leaderboard-overlay">
-            <div class="lb-title">🏆 TOP 5 MELLORES RANKS 🏆</div>
-            <div id="leaderboard-rows"></div>
-        </div>
-
-        <div id="arcade-input-screen">
-            <h1 style="color: #ff00ff; font-size: 3.5vh; margin: 0;">GAME OVER</h1>
-            <h2 style="color: #fff; font-size: 2.5vh; margin: 15px 0;">¡ESTÁS NO TOP DE RÉCORDS!</h2>
-            <p style="color: #00ff00; font-size: 2vh; margin: 0;">PUNTOS: <span id="final-score-display">0</span></p>
-            
-            <div class="letters-container">
-                <div class="letter-box">
-                    <div class="arrow-btn" onclick="changeLetter(0, 1)">▲</div>
-                    <span id="l0" class="active-letter">A</span>
-                    <div class="arrow-btn" onclick="changeLetter(0, -1)">▼</div>
-                </div>
-                <div class="letter-box">
-                    <div class="arrow-btn" onclick="changeLetter(1, 1)">▲</div>
-                    <span id="l1">A</span>
-                    <div class="arrow-btn" onclick="changeLetter(1, -1)">▼</div>
-                </div>
-                <div class="letter-box">
-                    <div class="arrow-btn" onclick="changeLetter(2, 1)">▲</div>
-                    <span id="l2">A</span>
-                    <div class="arrow-btn" onclick="changeLetter(2, -1)">▼</div>
-                </div>
-            </div>
-            
-            <button id="btn-save-record" onclick="saveRecord()">REXISTRAR INICIAIS</button>
-        </div>
-
         <div id="tut1" class="tutorial-overlay" onclick="iniciarJuegoFase1()"></div>  
         <div id="tut2" class="tutorial-overlay" onclick="iniciarJuegoFase2()"></div>
         <div id="screen-concierto" onclick="mostrarTutorial2()">  
@@ -114,19 +328,49 @@
                 <div style="color:white; font-size: 5.5vh; margin-top: 20px; letter-spacing: 3px; font-weight: 900;">SIN CITY</div>
             </div>
             <div class="option-container">
-                <div onclick="intentarSeleccion('moto')" class="veh-btn">MOTO<br><img id="img-btn-moto" src=""><br>CHUCHO</div>  
-                <div onclick="intentarSeleccion('coche')" class="veh-btn">COCHE<br><img id="img-btn-coche" src=""><br>BOCHO</div>  
+                <div onclick="intentarSeleccion('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
+                <div onclick="intentarSeleccion('coche')" class="veh-btn">COCHE<br><img src="coche.png"><br>BOCHO</div>  
             </div>
         </div>  
         <div id="timer-display">50</div>  
         <div id="score-box" class="ui-box">PUNTOS: <span id="score">0</span></div>  
         <div id="gas-box" class="ui-box fase2-ui">GAS: <span id="gas-value">100</span>%</div>
         <div id="lives-box">
-            <div class="vida-slot"><img id="img-live-0" src="" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
-            <div class="vida-slot"><img id="img-live-1" src="" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
-            <div class="vida-slot"><img id="img-live-2" src="" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
+            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
         </div>  
-        <canvas id="gameCanvas"></canvas>  
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- PANTALLA HIGHSCORES -->
+        <div id="screen-highscores">
+            <div class="hs-inner">
+                <div class="hs-title">★ HALL OF FAME ★</div>
+                <div class="hs-subtitle">SIN CITY FESTIVAL RUN</div>
+                <div class="hs-divider"></div>
+                <div class="hs-header-row">
+                    <span>#</span><span>NOME</span><span></span><span style="text-align:right">PUNTOS</span>
+                </div>
+                <div id="hs-lista" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+                <div class="hs-blink" style="margin-top:12px;">— INSERTA MONEDA —</div>
+                <button class="hs-insert-btn" onclick="iniciarDesdeHighscores()">▶ XOGAR</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA INSERTAR NOMBRE -->
+        <div id="screen-nombre">
+            <div class="nombre-titulo">¡NOVO RÉCORD!</div>
+            <div class="nombre-subtitulo">PUNTUACIÓN FINAL</div>
+            <div class="nombre-puntos" id="nombre-puntos-display">0</div>
+            <div style="color:#fff;font-size:2vh;margin-bottom:12px;letter-spacing:2px;">INTRODUCE O TEU NOME (3 LETRAS)</div>
+            <div class="nombre-letras">
+                <div class="nombre-letra activa" id="letra-0">_</div>
+                <div class="nombre-letra" id="letra-1">_</div>
+                <div class="nombre-letra" id="letra-2">_</div>
+            </div>
+            <div class="teclado-arcade" id="teclado"></div>
+            <div class="nombre-instruccion">Toca as letras para escribir o teu nome</div>
+        </div>
     </div>
 
     <video id="video-fase1" class="video-overlay" playsinline muted></video>
@@ -138,7 +382,91 @@
     const GW = 480, GH = 854; 
     canvas.width = GW; canvas.height = GH;
 
-    // Detectar automáticamente la URL absoluta base del despliegue actual
-    const BASE_URL = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const assets = {
+        intro: 'intro.png', motero: 'motero.png', coche: 'coche.png', pollo: 'pollo.png', 
+        guardia: 'guardia.png', pizza: 'pizza.png', muralla: 'muralla.png', vida: 'vida.png', 
+        puente: 'puente.png', fondoF2: 'fondo_fase2.png', moteroF2: 'motero_fase2.png', 
+        chucho: 'chucho.png', tutChucho: 'tutorial_chucho.png',
+        comida: 'comida.png', bueno: 'bueno.png', malo1: 'malo1.png', malo2: 'malo2.png', veneno: 'veneno.png'
+    };
+    const imgs = {};
+    for (let k in assets) { imgs[k] = new Image(); imgs[k].src = assets[k]; }
 
-    // Inicialización directa de imágenes con
+    const audio = {
+        crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
+        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
+        bg1: null, bg2: null
+    };
+
+    let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
+    let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
+    let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
+    let seleccionHabilitada = false;
+    const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
+
+    /* ============================================================
+       SISTEMA DE HIGHSCORES - SHARED STORAGE
+       Usa localStorage como fallback para cuando no hay window.storage
+       ============================================================ */
+
+    const HS_KEY = 'festival_run_highscores_v1';
+    const MAX_SCORES = 50;
+
+    async function cargarHighscores() {
+        try {
+            if (window.storage) {
+                const res = await window.storage.get(HS_KEY, true);
+                if (res && res.value) return JSON.parse(res.value);
+            }
+        } catch(e) {}
+        // Fallback localStorage
+        try {
+            const raw = localStorage.getItem(HS_KEY);
+            if (raw) return JSON.parse(raw);
+        } catch(e) {}
+        return [];
+    }
+
+    async function guardarHighscores(lista) {
+        const json = JSON.stringify(lista);
+        try {
+            if (window.storage) {
+                await window.storage.set(HS_KEY, json, true);
+            }
+        } catch(e) {}
+        // Guardar también en localStorage como backup
+        try { localStorage.setItem(HS_KEY, json); } catch(e) {}
+    }
+
+    async function comprobarYGuardarRecord(puntos, nombre, vehiculoUsado) {
+        let lista = await cargarHighscores();
+        const nuevaEntrada = {
+            nombre: nombre.toUpperCase(),
+            puntos: puntos,
+            vehiculo: vehiculoUsado === 'motero' ? 'MOTO' : 'COCHE',
+            fecha: new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'})
+        };
+        lista.push(nuevaEntrada);
+        lista.sort((a, b) => b.puntos - a.puntos);
+        lista = lista.slice(0, MAX_SCORES);
+        await guardarHighscores(lista);
+        return lista;
+    }
+
+    async function estaEnTop50(puntos) {
+        const lista = await cargarHighscores();
+        if (lista.length < MAX_SCORES) return true;
+        return puntos > lista[lista.length - 1].puntos;
+    }
+
+    /* ============================================================
+       PANTALLA HIGHSCORES
+       ============================================================ */
+
+    async function mostrarHighscores(nuevaEntradaObj) {
+        // Ocultar todo lo del juego
+        canvas.style.display = 'none';
+        document.getElementById('timer-display').style.display = 'none';
+        document.getElementById('score-box').style.display = 'none';
+        document.getElementById('gas-box').style.display = 'none';
+        document.getElementById('lives-box')
