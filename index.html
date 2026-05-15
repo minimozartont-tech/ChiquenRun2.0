@@ -21,7 +21,7 @@
         #game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; aspect-ratio: 480 / 854; background: #000; overflow: hidden; }  
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }  
 
-        /* Pantalla de carga temporal */
+        /* Pantalla de carga temporal ultraligera */
         #loading-screen { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; z-index: 5000; font-family: monospace; }
         .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #8e44ad; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -114,17 +114,17 @@
                 <div style="color:white; font-size: 5.5vh; margin-top: 20px; letter-spacing: 3px; font-weight: 900;">SIN CITY</div>
             </div>
             <div class="option-container">
-                <div onclick="intentarSeleccion('moto')" class="veh-btn">MOTO<br><img src="motero.png"><br>CHUCHO</div>  
-                <div onclick="intentarSeleccion('coche')" class="veh-btn">COCHE<br><img src="coche.png"><br>BOCHO</div>  
+                <div onclick="intentarSeleccion('moto')" class="veh-btn">MOTO<br><img id="img-btn-moto" src=""><br>CHUCHO</div>  
+                <div onclick="intentarSeleccion('coche')" class="veh-btn">COCHE<br><img id="img-btn-coche" src=""><br>BOCHO</div>  
             </div>
         </div>  
         <div id="timer-display">50</div>  
         <div id="score-box" class="ui-box">PUNTOS: <span id="score">0</span></div>  
         <div id="gas-box" class="ui-box fase2-ui">GAS: <span id="gas-value">100</span>%</div>
         <div id="lives-box">
-            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
-            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
-            <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
+            <div class="vida-slot"><img id="img-live-0" src="" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
+            <div class="vida-slot"><img id="img-live-1" src="" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
+            <div class="vida-slot"><img id="img-live-2" src="" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
         </div>  
         <canvas id="gameCanvas"></canvas>  
     </div>
@@ -138,206 +138,7 @@
     const GW = 480, GH = 854; 
     canvas.width = GW; canvas.height = GH;
 
-    // Inicialización directa de imágenes sin bloqueos de carga asíncrona
-    const imgs = {};
-    const assets = {
-        intro: 'intro.png', motero: 'motero.png', coche: 'coche.png', pollo: 'pollo.png', 
-        guardia: 'guardia.png', pizza: 'pizza.png', muralla: 'muralla.png', vida: 'vida.png', 
-        puente: 'puente.png', fondoF2: 'fondo_fase2.png', moteroF2: 'motero_fase2.png', 
-        chucho: 'chucho.png', comida: 'comida.png', bueno: 'bueno.png', malo1: 'malo1.png', 
-        malo2: 'malo2.png', veneno: 'veneno.png'
-    };
+    // Detectar automáticamente la URL absoluta base del despliegue actual
+    const BASE_URL = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
 
-    for(let k in assets) {
-        imgs[k] = new Image();
-        imgs[k].src = assets[k];
-    }
-
-    // Inicialización de audio con manejo seguro de errores
-    const audio = {
-        crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
-        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.mp3'),
-        bg1: null, bg2: null
-    };
-
-    let estado = 'INICIO', vehiculo = 'motero', score = 0, vidas = 3, tiempo = 50;
-    let scrollY = 0, carril = 1, obstaculos = [], itemsF2 = [], gas = 100, framesF2 = 0;
-    let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
-    let seleccionHabilitada = false;
-    const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
-
-    let initLetters = [65, 65, 65]; 
-    let activeLetterIdx = 0;
-    let fallbackRecords = [
-        {name: 'CHU', score: 1500}, {name: 'BOC', score: 1000}, {name: 'PLY', score: 800}, {name: 'GDR', score: 500}, {name: 'AAA', score: 100}
-    ];
-
-    function getRecords() {
-        try {
-            let data = localStorage.getItem('festival_run_records');
-            return data ? JSON.parse(data) : fallbackRecords;
-        } catch(e) { return fallbackRecords; }
-    }
-
-    function setRecords(recordsList) {
-        try { localStorage.setItem('festival_run_records', JSON.stringify(recordsList)); } catch(e) { fallbackRecords = recordsList; }
-    }
-
-    function renderLeaderboard() {
-        let records = getRecords();
-        records.sort((a, b) => b.score - a.score);
-        setRecords(records.slice(0, 5));
-        const rowsContainer = document.getElementById('leaderboard-rows');
-        if (rowsContainer) {
-            rowsContainer.innerHTML = '';
-            records.slice(0, 5).forEach((r, idx) => {
-                rowsContainer.innerHTML += `<div class="lb-row"><span>${idx+1}. ${r.name}</span><span>${r.score} PTS</span></div>`;
-            });
-        }
-    }
-
-    function triggerGameOver() {
-        if(audio.bg1) try { audio.bg1.pause(); } catch(e){}
-        if(audio.bg2) try { audio.bg2.pause(); } catch(e){}
-        document.getElementById('timer-display').style.display = 'none';
-        document.getElementById('score-box').style.display = 'none';
-        document.getElementById('gas-box').style.display = 'none';
-        document.getElementById('lives-box').style.display = 'none';
-        document.getElementById('final-score-display').innerText = score;
-        document.getElementById('arcade-input-screen').style.display = 'flex';
-        estado = 'ARCADE_INPUT';
-    }
-
-    window.changeLetter = function(boxIdx, dir) {
-        document.getElementById(`l${activeLetterIdx}`).classList.remove('active-letter');
-        activeLetterIdx = boxIdx;
-        document.getElementById(`l${activeLetterIdx}`).classList.add('active-letter');
-        let currentCode = initLetters[boxIdx] + dir;
-        if(currentCode < 65) currentCode = 90; 
-        if(currentCode > 90) currentCode = 65; 
-        initLetters[boxIdx] = currentCode;
-        document.getElementById(`l${boxIdx}`).innerText = String.fromCharCode(currentCode);
-    }
-
-    window.saveRecord = function() {
-        let finalName = String.fromCharCode(initLetters[0]) + String.fromCharCode(initLetters[1]) + String.fromCharCode(initLetters[2]);
-        let records = getRecords();
-        records.push({name: finalName, score: score});
-        records.sort((a, b) => b.score - a.score);
-        setRecords(records.slice(0, 5));
-        location.reload(); 
-    }
-
-    function fadeOutAudio(audioElement, duration = 2000) {
-        if (!audioElement) return;
-        try {
-            const startVolume = audioElement.volume;
-            const steps = 20; const interval = duration / steps; const stepValue = startVolume / steps;
-            const fade = setInterval(() => {
-                if (audioElement.volume > stepValue) { audioElement.volume -= stepValue; } 
-                else { audioElement.volume = 0; audioElement.pause(); clearInterval(fade); }
-            }, interval);
-        } catch(e) {}
-    }
-
-    function actualizarVidasUI() {
-        for(let i=0; i<3; i++) { document.getElementById(`cross-${i}`).style.display = (i >= vidas) ? 'flex' : 'none'; }
-    }
-
-    window.intentarSeleccion = function(v) {
-        if (!seleccionHabilitada) return;
-        mostrarTut1(v);
-    }
-
-    function safePlayAudio(audioObj) {
-        if(!audioObj) return;
-        try {
-            audioObj.play().catch(err => console.log("Reproducción de audio bloqueada por el navegador móvil. Waiting for touch."));
-        } catch(e) {}
-    }
-
-    function mostrarTut1(v) {
-        if (v === 'moto') {
-            vehiculo = 'motero';
-            audio.bg1 = new Audio('musica_chucho.mp3'); audio.bg2 = new Audio('musica_fondo.mp3');
-        } else {
-            vehiculo = 'coche';
-            audio.bg1 = new Audio('musica_juego.mp3'); audio.bg2 = new Audio('musica_albweto.mp3');
-        }
-        document.getElementById('selection').style.display = 'none';
-        const tut = document.getElementById('tut1');
-        tut.style.backgroundImage = `url('tutorial_fase1_${v}.png')`;
-        tut.style.display = 'block';
-        estado = 'TUTORIAL1';
-    }
-
-    window.iniciarJuegoFase1 = function() {
-        document.getElementById('leaderboard-overlay').style.display = 'none'; 
-        document.getElementById('tut1').style.display = 'none';
-        const timer = document.getElementById('timer-display');
-        timer.style.top = '10%'; timer.style.display = 'block';
-        document.getElementById('score-box').classList.remove('fase2-ui'); 
-        document.getElementById('score-box').style.display = 'block';
-        document.getElementById('lives-box').style.display = 'flex';
-        tiempo = 50; f1Finalizado = false; modoPuente = false; carril = 1;
-        if(audio.bg1) { audio.bg1.volume = 1; audio.bg1.loop = true; safePlayAudio(audio.bg1); }
-        actualizarVidasUI();
-        estado = 'JUGANDO_F1';
-    }
-
-    function loop() {
-        ctx.clearRect(0, 0, GW, GH);
-        if (estado === 'INICIO') { 
-            if(imgs.intro.complete && imgs.intro.width > 0) { ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
-        }
-
-        if (estado === 'JUGANDO_F1') {
-            if (tiempo > 0) scrollY = (scrollY + 14) % GH;
-            const bg = modoPuente ? imgs.puente : imgs.muralla;
-            if(bg.complete) { ctx.drawImage(bg, 0, scrollY - GH, GW, GH); ctx.drawImage(bg, 0, scrollY, GW, GH); }
-
-            let destinoX = (GW/3)*carril + (GW/6) - player.w/2;
-            if (tiempo <= 0) {
-                carril = 1; player.x += (destinoX - player.x) * 0.08;
-                if(Math.abs(player.x - destinoX) < 10) { player.speedOut += 0.4; player.y -= player.speedOut; }
-                if (player.y < -player.h && !f1Finalizado) { f1Finalizado = true; setTimeout(finalizarFase1, 800); }
-            } else { player.x += (destinoX - player.x) * 0.25; }
-
-            if (frameParpadeo > 0) { frameParpadeo--; if (Math.floor(frameParpadeo / 5) % 2 === 0) ctx.globalAlpha = 0.3; }
-            if(imgs[vehiculo].complete) ctx.drawImage(imgs[vehiculo], player.x, player.y, player.w, player.h); ctx.globalAlpha = 1.0;
-
-            for (let i = obstaculos.length - 1; i >= 0; i--) {
-                let o = obstaculos[i]; if (tiempo > 0) o.y += 13;
-                let tam = (o.tipo === 'guardia') ? 150 : 110;
-                if(imgs[o.tipo] && imgs[o.tipo].complete) ctx.drawImage(imgs[o.tipo], o.x, o.y, tam, tam);
-                if (tiempo > 0 && player.x < o.x+tam-30 && player.x+player.w > o.x+30 && player.y < o.y+tam-30 && player.y+player.h > o.y+30) {
-                    if(o.tipo === 'pollo') { score += 100; safePlayAudio(audio.point); document.getElementById('score').innerText = score; } 
-                    else { 
-                        vidas--; try { audio.crash.currentTime = 0; } catch(e){} safePlayAudio(audio.crash); 
-                        if (navigator.vibrate) navigator.vibrate(200); 
-                        frameParpadeo = 40; actualizarVidasUI(); 
-                        if(vidas <= 0) { triggerGameOver(); return; } 
-                    }
-                    obstaculos.splice(i, 1);
-                }
-            }
-            if (tiempo > 0) { tiempo -= 1/60; if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } }
-            document.getElementById('timer-display').innerText = Math.ceil(tiempo);
-        }
-
-        if (estado === 'JUGANDO_F2') {
-            let prog = framesF2 / 6000; if (prog < 1) framesF2++;
-            tiempo = 50 - (prog * 50); document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
-            const altJ = GH * 0.45; const margS = (GH - altJ) / 2;
-            if(imgs.fondoF2.complete) {
-                let ratio = imgs.fondoF2.width / imgs.fondoF2.height;
-                let aF = altJ * ratio; ctx.drawImage(imgs.fondoF2, -(prog * (aF - GW)), margS, aF, altJ);
-            }
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, margS); ctx.fillRect(0, margS + altJ, GW, GH);
-            itemsF2.forEach(it => {
-                if(!it.rec && framesF2 >= it.fTarget - 180) {
-                    it.x -= (GW / 90); let yPos = (margS + altJ) - it.h - it.yB;
-                    if(it.img && it.img.complete) ctx.drawImage(it.img, it.x, yPos, it.w, it.h);
-                    if(player.x < it.x+it.w-20 && player.x+100 > it.x+20 && player.y < yPos+it.h-20 && player.y+160 > yPos+20) {
-                        it.rec = true;
-                        if(it.tipo==='pollo' || it.tipo==='comida'){ 
+    // Inicialización directa de imágenes con
