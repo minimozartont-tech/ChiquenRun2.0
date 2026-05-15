@@ -44,7 +44,7 @@
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
 
-        /* PANTALLA FIN DE JUEGO MANTENIENDO EL Z-INDEX CORRECTO */
+        /* PANTALLA FIN DE JUEGO ADICIONAL */
         #screen-gameover { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; text-align: center; }
     </style>
 </head>  
@@ -115,30 +115,6 @@
     let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
-
-    // DECLARACIÓN GLOBAL CORRECTA ANTES DE SER USADA EN EL LOOP
-    window.mostrarPantallaFinal = function(esVictoria) {
-        estado = 'PANTALLA_FINAL';
-        if (audio.bg1 && audio.bg1.pause) audio.bg1.pause();
-        if (audio.bg2 && audio.bg2.pause) audio.bg2.pause();
-        
-        document.getElementById('timer-display').style.display = 'none';
-        document.getElementById('score-box').style.display = 'none';
-        document.getElementById('gas-box').style.display = 'none';
-        document.getElementById('lives-box').style.display = 'none';
-
-        document.getElementById('go-score').innerText = score + " PTS";
-        if(esVictoria) {
-            document.getElementById('go-title').innerText = "¡CONCERTO COMPLETADO!";
-            document.getElementById('go-title').style.color = "#00ff00";
-        } else {
-            document.getElementById('go-title').innerText = "FIN DO XOGO";
-            document.getElementById('go-title').style.color = "#ff0000";
-        }
-
-        document.getElementById('screen-gameover').style.display = 'flex';
-        setTimeout(function() { location.reload(); }, 4000);
-    }
 
     function fadeOutAudio(audioElement, duration = 2000) {
         if (!audioElement) return;
@@ -240,7 +216,19 @@
                         if (navigator.vibrate) navigator.vibrate(200); 
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
-                        if(vidas <= 0) { window.mostrarPantallaFinal(false); return; } 
+                        
+                        // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 1 (MUERTE)
+                        if(vidas <= 0) { 
+                            estado = 'FIN';
+                            if(audio.bg1) audio.bg1.pause();
+                            document.getElementById('timer-display').style.display = 'none';
+                            document.getElementById('score-box').style.display = 'none';
+                            document.getElementById('lives-box').style.display = 'none';
+                            document.getElementById('go-score').innerText = score + ' PTS';
+                            document.getElementById('screen-gameover').style.display = 'flex';
+                            setTimeout(() => { location.reload(); }, 4000);
+                            return; 
+                        } 
                     }
                     obstaculos.splice(i, 1);
                 }
@@ -284,7 +272,20 @@
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
-            if(gas <= 0) { window.mostrarPantallaFinal(false); return; }
+            
+            // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 2 (SIN GAS)
+            if(gas <= 0) { 
+                estado = 'FIN';
+                if(audio.bg2) audio.bg2.pause();
+                document.getElementById('timer-display').style.display = 'none';
+                document.getElementById('score-box').style.display = 'none';
+                document.getElementById('gas-box').style.display = 'none';
+                document.getElementById('go-score').innerText = score + ' PTS';
+                document.getElementById('screen-gameover').style.display = 'flex';
+                setTimeout(() => { location.reload(); }, 4000);
+                return; 
+            }
+            
             if(prog >= 1) {
                 estado = 'VIDEO2'; canvas.style.display = 'none';
                 document.getElementById('timer-display').style.display = 'none';
@@ -294,7 +295,17 @@
                 v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
                 v2.style.display = 'block'; v2.play();
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
-                v2.onended = () => { v2.style.display = 'none'; window.mostrarPantallaFinal(true); };
+                
+                // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 2 (VICTORIA AL ACABAR EL VÍDEO)
+                v2.onended = () => { 
+                    v2.style.display = 'none'; 
+                    estado = 'FIN';
+                    document.getElementById('go-title').innerText = "¡CONCERTO COMPLETADO!";
+                    document.getElementById('go-title').style.color = "#00ff00";
+                    document.getElementById('go-score').innerText = score + ' PTS';
+                    document.getElementById('screen-gameover').style.display = 'flex';
+                    setTimeout(() => { location.reload(); }, 4000);
+                };
             }
         }
         requestAnimationFrame(loop);
@@ -343,24 +354,4 @@
             if (i === 45) { tipo='comida'; img=imgs.comida; }
             else if (i === total-2) { tipo='veneno'; img=imgs.veneno; }
             else if (r < 0.25) { tipo='pollo'; img=imgs.pollo; }
-            else if (r < 0.50) { tipo='bueno'; img=imgs.bueno; w=140; h=70; }
-            else if (r < 0.75) { tipo='malo'; img=imgs.malo1; }
-            else { tipo='malo'; img=imgs.malo2; w=60; h=60; }
-            itemsF2.push({ fTarget, x: GW + 200, yB: [20, 165, 315][Math.floor(Math.random()*3)], tipo, img, w, h, rec: false });
-        }
-    }
-
-    // --- SISTEMA DE INSTALACIÓN ---
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        setTimeout(() => {
-            if (deferredPrompt) deferredPrompt.prompt();
-        }, 4000);
-    });
-
-    window.addEventListener('touchstart', (e) => {
-        if (estado === 'INICIO') { 
-            document.getElementById('selection').style.display = 'flex'; 
-  
+            else if (r < 0.50) { tip
