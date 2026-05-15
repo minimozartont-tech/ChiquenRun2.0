@@ -43,21 +43,11 @@
         #screen-concierto { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 110; text-align: center; }
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
-
-        /* PANTALLA FIN DE JUEGO ADICIONAL */
-        #screen-gameover { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; text-align: center; }
     </style>
 </head>  
 <body>  
 
     <div id="game-container">
-        <div id="screen-gameover">
-            <h1 id="go-title" style="color: #ff0000; font-size: 4.5vh; margin: 0; font-weight: bold;">FIN DO XOGO</h1>
-            <p style="font-size: 2.2vh; color: #aaa; margin: 20px 0 5px 0;">PUNTUACIÓN TOTAL:</p>
-            <h2 style="color: #ffff00; font-size: 7vh; margin: 0; font-weight: bold;" id="go-score">0 PTS</h2>
-            <p style="color: #666; font-size: 1.8vh; margin-top: 40px;">Cargando inicio...</p>
-        </div>
-
         <div id="tut1" class="tutorial-overlay" onclick="iniciarJuegoFase1()"></div>  
         <div id="tut2" class="tutorial-overlay" onclick="iniciarJuegoFase2()"></div>
         <div id="screen-concierto" onclick="mostrarTutorial2()">  
@@ -217,17 +207,24 @@
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
                         
-                        // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 1 (MUERTE)
-                        if(vidas <= 0) { 
-                            estado = 'FIN';
+                        // CAMBIO AQUÍ: EN VEZ DE RELOAD AUTOMÁTICO, DIBUJAMOS EN CANVAS Y PARAMOS
+                        if(vidas <= 0) {
+                            estado = 'FIN_PANTALLA';
                             if(audio.bg1) audio.bg1.pause();
                             document.getElementById('timer-display').style.display = 'none';
                             document.getElementById('score-box').style.display = 'none';
                             document.getElementById('lives-box').style.display = 'none';
-                            document.getElementById('go-score').innerText = score + ' PTS';
-                            document.getElementById('screen-gameover').style.display = 'flex';
-                            setTimeout(() => { location.reload(); }, 4000);
-                            return; 
+                            
+                            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, GH);
+                            ctx.fillStyle = "#ff0000"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
+                            ctx.fillText("FIN DO XOGO", GW/2, GH/2 - 50);
+                            ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
+                            ctx.fillText("PUNTUACIÓN TOTAL:", GW/2, GH/2 + 20);
+                            ctx.fillStyle = "#ffff00"; ctx.font = "bold 55px Arial";
+                            ctx.fillText(score + " PTS", GW/2, GH/2 + 90);
+                            
+                            setTimeout(function(){ location.reload(); }, 4000);
+                            return;
                         } 
                     }
                     obstaculos.splice(i, 1);
@@ -273,17 +270,24 @@
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
             
-            // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 2 (SIN GAS)
-            if(gas <= 0) { 
-                estado = 'FIN';
+            // CAMBIO AQUÍ: SI SE QUEDA SIN GAS EN FASE 2
+            if(gas <= 0) {
+                estado = 'FIN_PANTALLA';
                 if(audio.bg2) audio.bg2.pause();
                 document.getElementById('timer-display').style.display = 'none';
                 document.getElementById('score-box').style.display = 'none';
                 document.getElementById('gas-box').style.display = 'none';
-                document.getElementById('go-score').innerText = score + ' PTS';
-                document.getElementById('screen-gameover').style.display = 'flex';
-                setTimeout(() => { location.reload(); }, 4000);
-                return; 
+                
+                ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, GH);
+                ctx.fillStyle = "#ff0000"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
+                ctx.fillText("FIN DO XOGO", GW/2, GH/2 - 50);
+                ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
+                ctx.fillText("PUNTUACIÓN TOTAL:", GW/2, GH/2 + 20);
+                ctx.fillStyle = "#ffff00"; ctx.font = "bold 55px Arial";
+                ctx.fillText(score + " PTS", GW/2, GH/2 + 90);
+                
+                setTimeout(function(){ location.reload(); }, 4000);
+                return;
             }
             
             if(prog >= 1) {
@@ -296,18 +300,30 @@
                 v2.style.display = 'block'; v2.play();
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
                 
-                // INTERCEPCIÓN CAMBIO EN LÍNEA FASE 2 (VICTORIA AL ACABAR EL VÍDEO)
-                v2.onended = () => { 
-                    v2.style.display = 'none'; 
-                    estado = 'FIN';
-                    document.getElementById('go-title').innerText = "¡CONCERTO COMPLETADO!";
-                    document.getElementById('go-title').style.color = "#00ff00";
-                    document.getElementById('go-score').innerText = score + ' PTS';
-                    document.getElementById('screen-gameover').style.display = 'flex';
-                    setTimeout(() => { location.reload(); }, 4000);
+                // CAMBIO AQUÍ: AL GANAR EL JUEGO TRAS EL VÍDEO FINAL
+                v2.onended = () => {
+                    canvas.style.display = 'block';
+                    v2.style.display = 'none';
+                    estado = 'FIN_PANTALLA';
+                    
+                    ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, GH);
+                    ctx.fillStyle = "#00ff00"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center";
+                    ctx.fillText("CONCERTO COMPLETADO!", GW/2, GH/2 - 50);
+                    ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
+                    ctx.fillText("PUNTUACIÓN TOTAL:", GW/2, GH/2 + 20);
+                    ctx.fillStyle = "#ffff00"; ctx.font = "bold 55px Arial";
+                    ctx.fillText(score + " PTS", GW/2, GH/2 + 90);
+                    
+                    setTimeout(function(){ location.reload(); }, 4000);
                 };
             }
         }
+        
+        // MANTENER EL DIBUJO ACTIVO SI ESTAMOS EN LA PANTALLA FINAL PARA QUE NO SE QUEDE EN NEGRO DURANTE LA PAUSA
+        if (estado === 'FIN_PANTALLA') {
+            return; 
+        }
+        
         requestAnimationFrame(loop);
     }
 
@@ -339,19 +355,4 @@
         document.getElementById('lives-box').style.display = 'none';
         gas = 100; framesF2 = 0; itemsF2 = []; tiempo = 50;
         player.x = 80; player.y = GH * 0.7; player.speedOut = 0;
-        generarItemsF2();
-        audio.bg2.volume = 1; audio.bg2.loop = true; audio.bg2.play();
-        estado = 'JUGANDO_F2';
-    }
-
-    function generarItemsF2() {
-        const total = 85; 
-        const intervalo = (6000 * 0.92) / total;
-        for (let i = 0; i < total; i++) {
-            let tipo, img, fTarget = (i + 1) * intervalo;
-            let r = Math.random();
-            let w = 80, h = 80;
-            if (i === 45) { tipo='comida'; img=imgs.comida; }
-            else if (i === total-2) { tipo='veneno'; img=imgs.veneno; }
-            else if (r < 0.25) { tipo='pollo'; img=imgs.pollo; }
-            else if (r < 0.50) { tip
+        generarItemsF2(
