@@ -106,11 +106,12 @@
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
-    function fadeOutAudio(audioElement, duration = 2000) {
+    function fadeOutAudio(audioElement, duration) {
         if (!audioElement) return;
+        let d = duration || 2000;
         const startVolume = audioElement.volume;
         const steps = 20;
-        const interval = duration / steps;
+        const interval = d / steps;
         const stepValue = startVolume / steps;
         const fade = setInterval(() => {
             if (audioElement.volume > stepValue) { audioElement.volume -= stepValue; } 
@@ -120,7 +121,7 @@
 
     function actualizarVidasUI() {
         for(let i=0; i<3; i++) {
-            document.getElementById(`cross-${i}`).style.display = (i >= vidas) ? 'flex' : 'none';
+            document.getElementById('cross-' + i).style.display = (i >= vidas) ? 'flex' : 'none';
         }
     }
 
@@ -141,7 +142,7 @@
         }
         document.getElementById('selection').style.display = 'none';
         const tut = document.getElementById('tut1');
-        tut.style.backgroundImage = `url('tutorial_fase1_${v}.png')`;
+        tut.style.backgroundImage = "url('tutorial_fase1_" + v + ".png')";
         tut.style.display = 'block';
         estado = 'TUTORIAL1';
     }
@@ -160,7 +161,6 @@
         estado = 'JUGANDO_F1';
     }
 
-    // NUEVA FUNCIÓN COMPLETAMENTE AISLADA PARA TERMINAR EL JUEGO SIN ROMPER EL BUCLE
     function terminarJuego(mensaje, esVictoria) {
         estado = 'TERMINADO';
         if(audio.bg1) audio.bg1.pause();
@@ -193,7 +193,7 @@
     }
 
     function loop() {
-        if (estado === 'TERMINADO') return; // Si el juego termina, congelamos el bucle por completo aquí
+        if (estado === 'TERMINADO') return; 
 
         ctx.clearRect(0, 0, GW, GH);
         if (estado === 'INICIO') { if(imgs.intro.complete) ctx.drawImage(imgs.intro, 0, 0, GW, GH); }
@@ -351,16 +351,32 @@
         const total = 85; 
         const intervalo = (6000 * 0.92) / total;
         for (let i = 0; i < total; i++) {
-            let tipo, img, fTarget = (i + 1) * intervalo;
+            let tipoItem = 'malo';
+            let imgItem = imgs.malo1;
+            let fTarget = (i + 1) * intervalo;
             let r = Math.random();
             let w = 80, h = 80;
-            if (i === 45) { tipo='comida'; img=imgs.comida; }
-            else if (i === total-2) { tipo='veneno'; img=imgs.veneno; }
-            else if (r < 0.25) { tipo='pollo'; img=imgs.pollo; }
-            else if (r < 0.50) { tipo='bueno'; img=imgs.bueno; w=140; h=70; }
-            else if (r < 0.75) { tipo='malo'; img=imgs.malo1; }
-            else { tipo='malo'; img=imgs.malo2; w=60; h=60; }
-            itemsF2.push({ fTarget, x: GW + 200, yB: [20, 165, 315][Math.floor(Math.random()*3)], tipo, img, w, h, rec: false });
+            
+            if (i === 45) { tipoItem='comida'; imgItem=imgs.comida; }
+            else if (i === total-2) { tipoItem='veneno'; imgItem=imgs.veneno; }
+            else if (r < 0.25) { tipoItem='pollo'; imgItem=imgs.pollo; }
+            else if (r < 0.50) { tipoItem='bueno'; imgItem=imgs.bueno; w=140; h=70; }
+            else if (r < 0.75) { tipoItem='malo'; imgItem=imgs.malo1; }
+            else { tipoItem='malo'; imgItem=imgs.malo2; w=60; h=60; }
+            
+            let yPositions = [20, 165, 315];
+            let yB = yPositions[Math.floor(Math.random()*3)];
+            
+            itemsF2.push({ 
+                fTarget: fTarget, 
+                x: GW + 200, 
+                yB: yB, 
+                tipo: tipoItem, 
+                img: imgItem, 
+                w: w, 
+                h: h, 
+                rec: false 
+            });
         }
     }
 
@@ -378,9 +394,3 @@
         if (estado === 'TERMINADO') return;
         if (estado === 'INICIO') { 
             document.getElementById('selection').style.display = 'flex'; 
-            estado = 'SELECCION'; 
-            seleccionHabilitada = false;
-            setTimeout(() => { seleccionHabilitada = true; }, 400); 
-        }
-        else if (estado === 'JUGANDO_F1' && tiempo > 0) {
-            if(e.touches[0].clientX < window.innerWidth/2) { if
