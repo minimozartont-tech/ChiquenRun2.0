@@ -206,15 +206,7 @@
                         if (navigator.vibrate) navigator.vibrate(200); 
                         frameParpadeo = 40; 
                         actualizarVidasUI(); 
-                        
-                        if(vidas <= 0) {
-                            estado = 'FIN_PERDER';
-                            if(audio.bg1) audio.bg1.pause();
-                            document.getElementById('timer-display').style.display = 'none';
-                            document.getElementById('score-box').style.display = 'none';
-                            document.getElementById('lives-box').style.display = 'none';
-                            setTimeout(function(){ location.reload(); }, 4000);
-                        } 
+                        if(vidas <= 0) location.reload(); 
                     }
                     obstaculos.splice(i, 1);
                 }
@@ -258,16 +250,7 @@
             if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
             let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
             ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
-            
-            if(gas <= 0) {
-                estado = 'FIN_PERDER';
-                if(audio.bg2) audio.bg2.pause();
-                document.getElementById('timer-display').style.display = 'none';
-                document.getElementById('score-box').style.display = 'none';
-                document.getElementById('gas-box').style.display = 'none';
-                setTimeout(function(){ location.reload(); }, 4000);
-            }
-            
+            if(gas <= 0) location.reload();
             if(prog >= 1) {
                 estado = 'VIDEO2'; canvas.style.display = 'none';
                 document.getElementById('timer-display').style.display = 'none';
@@ -277,35 +260,9 @@
                 v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
                 v2.style.display = 'block'; v2.play();
                 v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
-                v2.onended = () => {
-                    canvas.style.display = 'block';
-                    v2.style.display = 'none';
-                    estado = 'FIN_GANAR';
-                    setTimeout(function(){ location.reload(); }, 4000);
-                };
+                v2.onended = () => location.reload();
             }
         }
-        
-        if (estado === 'FIN_PERDER') {
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, GH);
-            ctx.fillStyle = "#ff0000"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
-            ctx.fillText("FIN DO XOGO", GW/2, GH/2 - 50);
-            ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
-            ctx.fillText("PUNTUACIÓN TOTAL:", GW/2, GH/2 + 20);
-            ctx.fillStyle = "#ffff00"; ctx.font = "bold 55px Arial";
-            ctx.fillText(score + " PTS", GW/2, GH/2 + 90);
-        }
-
-        if (estado === 'FIN_GANAR') {
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, GH);
-            ctx.fillStyle = "#00ff00"; ctx.font = "bold 34px Arial"; ctx.textAlign = "center";
-            ctx.fillText("CONCERTO COMPLETADO!", GW/2, GH/2 - 50);
-            ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
-            ctx.fillText("PUNTUACIÓN TOTAL:", GW/2, GH/2 + 20);
-            ctx.fillStyle = "#ffff00"; ctx.font = "bold 55px Arial";
-            ctx.fillText(score + " PTS", GW/2, GH/2 + 90);
-        }
-        
         requestAnimationFrame(loop);
     }
 
@@ -364,6 +321,49 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        // Lanzamos el aviso a los 4 segundos de entrar
         setTimeout(() => {
             if (deferredPrompt) deferredPrompt.prompt();
-      
+        }, 4000);
+    });
+
+    window.addEventListener('touchstart', (e) => {
+        if (estado === 'INICIO') { 
+            document.getElementById('selection').style.display = 'flex'; 
+            estado = 'SELECCION'; 
+            seleccionHabilitada = false;
+            setTimeout(() => { seleccionHabilitada = true; }, 400); 
+        }
+        else if (estado === 'JUGANDO_F1' && tiempo > 0) {
+            if(e.touches[0].clientX < window.innerWidth/2) { if(carril > 0) carril--; } else { if(carril < 2) carril++; }
+        } else if (estado === 'JUGANDO_F2') { if (player.saltos < 2) { player.vy = -14; player.saltos++; } }
+    });
+
+    setInterval(() => { 
+        if(estado === 'JUGANDO_F1' && tiempo > 0) {
+            const r = Math.random();
+            let t = (r < 0.33) ? 'pollo' : (r < 0.66) ? 'pizza' : 'guardia';
+            let tSize = (t === 'guardia') ? 150 : 110;
+            obstaculos.push({ x: (GW/3)*Math.floor(Math.random()*3) + (GW/6)-tSize/2, y: -150, tipo: t }); 
+        } 
+    }, 900);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => { 
+          navigator.serviceWorker.register('sw.js').then(reg => {
+              reg.onupdatefound = () => {
+                  const installingWorker = reg.installing;
+                  installingWorker.onstatechange = () => {
+                      if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          if (confirm("¡Nueva versión disponible! ¿Actualizar?")) window.location.reload();
+                      }
+                  };
+              };
+          }); 
+      });
+    }
+
+    loop();
+</script>  
+</body>  
+</html>
