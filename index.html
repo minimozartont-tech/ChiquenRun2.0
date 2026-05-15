@@ -43,6 +43,29 @@
         #screen-concierto { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 110; text-align: center; }
         .tutorial-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; z-index: 150; display: none; }  
         .video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 1000; object-fit: contain; }
+        
+        /* ESTILOS PARA PANTALLA DE HIGH SCORES */
+        #high-scores-screen { position: absolute; inset: 0; background: linear-gradient(135deg, #1a0033 0%, #2d004d 100%); display: none; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 120; padding: 20px; text-align: center; overflow-y: auto; }
+        #high-scores-screen h1 { color: #00ff00; font-size: 3.5vh; margin: 20px 0; text-shadow: 2px 2px #8e44ad; letter-spacing: 2px; }
+        .scores-table { width: 95%; max-width: 450px; margin: 15px auto; }
+        .score-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); border: 1px solid #8e44ad; padding: 10px; margin: 5px 0; border-radius: 8px; color: #fff; font-size: 2.2vh; font-weight: bold; }
+        .score-row.highlight { background: rgba(142,68,173,0.5); border-color: #00ff00; }
+        .score-pos { color: #ffff00; min-width: 40px; }
+        .score-name { flex: 1; text-align: left; margin-left: 15px; color: #00ff00; }
+        .score-val { color: #ffff00; min-width: 80px; text-align: right; }
+        
+        #name-input-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 125; text-align: center; }
+        #name-input-screen h2 { color: #00ff00; font-size: 2.8vh; margin-bottom: 30px; text-shadow: 2px 2px #8e44ad; }
+        #name-input-screen p { color: #fff; font-size: 2vh; margin: 10px 0; }
+        .letter-selector { display: flex; gap: 15px; justify-content: center; margin: 30px 0; }
+        .letter-box { width: 70px; height: 70px; background: rgba(142,68,173,0.3); border: 2px solid #8e44ad; border-radius: 10px; color: #00ff00; font-size: 3.5vh; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .letter-box.active { background: #8e44ad; border-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .arrow-btn { color: #fff; font-size: 2.5vh; font-weight: bold; cursor: pointer; user-select: none; margin: 0 10px; }
+        .button-group { display: flex; gap: 15px; margin-top: 40px; justify-content: center; }
+        .btn-save { background: #00ff00; color: #000; border: none; padding: 12px 30px; border-radius: 8px; font-size: 2.2vh; font-weight: bold; cursor: pointer; }
+        .btn-save:active { opacity: 0.7; }
+        .btn-cancel { background: #ff0000; color: #fff; border: none; padding: 12px 30px; border-radius: 8px; font-size: 2.2vh; font-weight: bold; cursor: pointer; }
+        .btn-cancel:active { opacity: 0.7; }
     </style>
 </head>  
 <body>  
@@ -71,7 +94,35 @@
             <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-0" class="cross">X</div></div>
             <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-1" class="cross">X</div></div>
             <div class="vida-slot"><img src="vida.png" class="vida-icon"><div id="cross-2" class="cross">X</div></div>
-        </div>  
+        </div>
+        
+        <div id="high-scores-screen">
+            <h1>🏆 HIGH SCORES 🏆</h1>
+            <div class="scores-table" id="scores-table"></div>
+            <button onclick="volverAlInicio()" style="margin-top: 30px; background: #8e44ad; color: #fff; border: 2px solid #00ff00; padding: 12px 30px; border-radius: 8px; font-size: 2.2vh; font-weight: bold; cursor: pointer;">VOLVER</button>
+        </div>
+        
+        <div id="name-input-screen">
+            <h2>¡PUNTUACIÓN TOP 10!</h2>
+            <p>ESCRIBE TU NOMBRE (3 LETRAS)</p>
+            <div class="letter-selector">
+                <span class="arrow-btn" onclick="prevLetter(0)">◄</span>
+                <div class="letter-box active" id="letter-0">A</div>
+                <span class="arrow-btn" onclick="nextLetter(0)">►</span>
+                <span class="arrow-btn" onclick="prevLetter(1)">◄</span>
+                <div class="letter-box" id="letter-1">A</div>
+                <span class="arrow-btn" onclick="nextLetter(1)">►</span>
+                <span class="arrow-btn" onclick="prevLetter(2)">◄</span>
+                <div class="letter-box" id="letter-2">A</div>
+                <span class="arrow-btn" onclick="nextLetter(2)">►</span>
+            </div>
+            <p style="color: #8e44ad; font-size: 1.8vh;">Puntuación: <span id="final-score">0</span> puntos</p>
+            <div class="button-group">
+                <button class="btn-save" onclick="confirmarNombre()">GUARDAR</button>
+                <button class="btn-cancel" onclick="cancelarNombre()">CANCELAR</button>
+            </div>
+        </div>
+        
         <canvas id="gameCanvas"></canvas>  
     </div>
 
@@ -105,6 +156,142 @@
     let modoPuente = false, frameParpadeo = 0, f1Finalizado = false;
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
+
+    // VARIABLES PARA HIGH SCORES
+    let highScores = [];
+    let currentLetters = ['A', 'A', 'A'];
+    let selectedLetterIndex = 0;
+    const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    // CARGAR HIGH SCORES AL INICIAR
+    function cargarHighScores() {
+        const stored = localStorage.getItem('festivalRunScores');
+        if (stored) {
+            highScores = JSON.parse(stored);
+        } else {
+            highScores = [];
+        }
+    }
+
+    // GUARDAR HIGH SCORES
+    function guardarHighScores() {
+        localStorage.setItem('festivalRunScores', JSON.stringify(highScores));
+    }
+
+    // MOSTRAR PANTALLA DE HIGH SCORES
+    function mostrarHighScores() {
+        cargarHighScores();
+        const tabla = document.getElementById('scores-table');
+        tabla.innerHTML = '';
+        
+        for (let i = 0; i < 10; i++) {
+            const row = document.createElement('div');
+            row.className = 'score-row';
+            if (highScores[i]) {
+                row.innerHTML = `
+                    <span class="score-pos">#${i + 1}</span>
+                    <span class="score-name">${highScores[i].name}</span>
+                    <span class="score-val">${highScores[i].points}</span>
+                `;
+            } else {
+                row.innerHTML = `
+                    <span class="score-pos">#${i + 1}</span>
+                    <span class="score-name">---</span>
+                    <span class="score-val">0</span>
+                `;
+            }
+            tabla.appendChild(row);
+        }
+        
+        document.getElementById('high-scores-screen').style.display = 'flex';
+    }
+
+    // COMPROBAR SI PUNTUACIÓN ES TOP 10
+    function esTopTen(puntos) {
+        cargarHighScores();
+        if (highScores.length < 10) return true;
+        return puntos > highScores[9].points;
+    }
+
+    // MOSTRAR PANTALLA DE ENTRADA DE NOMBRE
+    function mostrarPantallaEntrada() {
+        document.getElementById('name-input-screen').style.display = 'flex';
+        document.getElementById('final-score').innerText = score;
+        currentLetters = ['A', 'A', 'A'];
+        selectedLetterIndex = 0;
+        actualizarLetrasUI();
+    }
+
+    // ACTUALIZAR UI DE LETRAS
+    function actualizarLetrasUI() {
+        for (let i = 0; i < 3; i++) {
+            const box = document.getElementById(`letter-${i}`);
+            box.innerText = currentLetters[i];
+            box.classList.toggle('active', i === selectedLetterIndex);
+        }
+    }
+
+    // SIGUIENTE LETRA
+    function nextLetter(index) {
+        const posActual = LETTERS.indexOf(currentLetters[index]);
+        currentLetters[index] = LETTERS[(posActual + 1) % LETTERS.length];
+        actualizarLetrasUI();
+    }
+
+    // LETRA ANTERIOR
+    function prevLetter(index) {
+        const posActual = LETTERS.indexOf(currentLetters[index]);
+        currentLetters[index] = LETTERS[(posActual - 1 + LETTERS.length) % LETTERS.length];
+        actualizarLetrasUI();
+    }
+
+    // CONFIRMAR NOMBRE
+    function confirmarNombre() {
+        const nombre = currentLetters.join('');
+        const nuevoScore = { name: nombre, points: score };
+        
+        cargarHighScores();
+        highScores.push(nuevoScore);
+        highScores.sort((a, b) => b.points - a.points);
+        highScores = highScores.slice(0, 10);
+        guardarHighScores();
+        
+        document.getElementById('name-input-screen').style.display = 'none';
+        mostrarHighScores();
+    }
+
+    // CANCELAR ENTRADA
+    function cancelarNombre() {
+        document.getElementById('name-input-screen').style.display = 'none';
+        mostrarHighScores();
+    }
+
+    // VOLVER AL INICIO
+    function volverAlInicio() {
+        document.getElementById('high-scores-screen').style.display = 'none';
+        estado = 'INICIO';
+        score = 0;
+        vidas = 5;
+        tiempo = 50;
+        scrollY = 0;
+        carril = 1;
+        obstaculos = [];
+        itemsF2 = [];
+        gas = 100;
+        framesF2 = 0;
+        modoPuente = false;
+        frameParpadeo = 0;
+        f1Finalizado = false;
+        player.x = GW/2;
+        player.y = GH-250;
+        player.vy = 0;
+        player.saltos = 0;
+        player.speedOut = 0;
+        document.getElementById('score').innerText = '0';
+        canvas.style.display = 'block';
+        if (audio.bg1) audio.bg1.pause();
+        if (audio.bg2) audio.bg2.pause();
+    }
 
     function fadeOutAudio(audioElement, duration = 2000) {
         if (!audioElement) return;
@@ -201,169 +388,4 @@
                     } 
                     else { 
                         vidas--; 
-                        audio.crash.currentTime = 0; 
-                        audio.crash.play(); 
-                        if (navigator.vibrate) navigator.vibrate(200); 
-                        frameParpadeo = 40; 
-                        actualizarVidasUI(); 
-                        if(vidas <= 0) location.reload(); 
-                    }
-                    obstaculos.splice(i, 1);
-                }
-            }
-            if (tiempo > 0) {
-                tiempo -= 1/60;
-                if(tiempo <= 0) { tiempo = 0; modoPuente = true; scrollY = 0; } 
-            }
-            document.getElementById('timer-display').innerText = Math.ceil(tiempo);
-        }
-
-        if (estado === 'JUGANDO_F2') {
-            let prog = framesF2 / 6000; if (prog < 1) framesF2++;
-            tiempo = 50 - (prog * 50); document.getElementById('timer-display').innerText = Math.ceil(Math.max(0, tiempo));
-            const altJ = GH * 0.45; const margS = (GH - altJ) / 2;
-            if(imgs.fondoF2.complete) {
-                let ratio = imgs.fondoF2.width / imgs.fondoF2.height;
-                let aF = altJ * ratio; ctx.drawImage(imgs.fondoF2, -(prog * (aF - GW)), margS, aF, altJ);
-            }
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, GW, margS); ctx.fillRect(0, margS + altJ, GW, GH);
-            itemsF2.forEach(it => {
-                if(!it.rec && framesF2 >= it.fTarget - 180) {
-                    it.x -= (GW / 90);
-                    let yPos = (margS + altJ) - it.h - it.yB;
-                    ctx.drawImage(it.img, it.x, yPos, it.w, it.h);
-                    if(player.x < it.x+it.w-20 && player.x+100 > it.x+20 && player.y < yPos+it.h-20 && player.y+160 > yPos+20) {
-                        it.rec = true;
-                        if(it.tipo==='pollo' || it.tipo==='comida'){ score+=100; audio.point.play(); }
-                        if(it.tipo==='bueno'){ gas=Math.min(100, gas+15); audio.bueno.play(); }
-                        if(it.tipo==='malo' || it.tipo==='veneno'){ 
-                            gas-=10; 
-                            audio.malo.play(); 
-                            if (navigator.vibrate) navigator.vibrate(200);
-                        }
-                        document.getElementById('score').innerText = score;
-                        document.getElementById('gas-value').innerText = Math.floor(gas);
-                    }
-                }
-            });
-            let sueloY = (margS + altJ) - 160; player.vy += 0.6; player.y += player.vy;
-            if(player.y > sueloY){ player.y = sueloY; player.vy = 0; player.saltos = 0; }
-            let imgFinalF2 = (vehiculo === 'motero') ? imgs.chucho : imgs.moteroF2;
-            ctx.drawImage(imgFinalF2, player.x, player.y, 100, 160);
-            if(gas <= 0) location.reload();
-            if(prog >= 1) {
-                estado = 'VIDEO2'; canvas.style.display = 'none';
-                document.getElementById('timer-display').style.display = 'none';
-                document.getElementById('score-box').style.display = 'none';
-                document.getElementById('gas-box').style.display = 'none';
-                const v2 = document.getElementById('video-fase2'); 
-                v2.src = (vehiculo === 'motero') ? 'chucho_concierto.mp4' : 'concierto.mp4';
-                v2.style.display = 'block'; v2.play();
-                v2.ontimeupdate = () => { if (v2.duration - v2.currentTime < 2.5) { fadeOutAudio(audio.bg2, 2000); v2.ontimeupdate = null; } };
-                v2.onended = () => location.reload();
-            }
-        }
-        requestAnimationFrame(loop);
-    }
-
-    function finalizarFase1() {
-        estado = 'VIDEO1';
-        document.getElementById('timer-display').style.display = 'none';
-        const vid = document.getElementById('video-fase1');
-        vid.src = (vehiculo === 'motero') ? 'moto_final.mp4' : 'coche_final.mp4';
-        vid.style.display = 'block'; vid.play();
-        vid.ontimeupdate = () => { if (vid.duration - vid.currentTime < 2.5) { fadeOutAudio(audio.bg1, 2000); vid.ontimeupdate = null; } };
-        vid.onended = () => { vid.style.display = 'none'; document.getElementById('screen-concierto').style.display = 'flex'; };
-    }
-
-    window.mostrarTutorial2 = function() {
-        document.getElementById('screen-concierto').style.display = 'none';
-        const tut2 = document.getElementById('tut2');
-        tut2.style.backgroundImage = (vehiculo === 'motero') ? "url('tutorial_chucho.png')" : "url('tutorial_fase2.png')";
-        tut2.style.display = 'block';
-    }
-
-    window.iniciarJuegoFase2 = function() {
-        document.getElementById('tut2').style.display = 'none';
-        const timer = document.getElementById('timer-display');
-        timer.style.top = 'auto'; timer.style.bottom = '5%';
-        timer.style.display = 'block';
-        document.getElementById('score-box').classList.add('fase2-ui'); 
-        document.getElementById('score-box').style.display = 'block';
-        document.getElementById('gas-box').style.display = 'block';
-        document.getElementById('lives-box').style.display = 'none';
-        gas = 100; framesF2 = 0; itemsF2 = []; tiempo = 50;
-        player.x = 80; player.y = GH * 0.7; player.speedOut = 0;
-        generarItemsF2();
-        audio.bg2.volume = 1; audio.bg2.loop = true; audio.bg2.play();
-        estado = 'JUGANDO_F2';
-    }
-
-    function generarItemsF2() {
-        const total = 85; 
-        const intervalo = (6000 * 0.92) / total;
-        for (let i = 0; i < total; i++) {
-            let tipo, img, fTarget = (i + 1) * intervalo;
-            let r = Math.random();
-            let w = 80, h = 80;
-            if (i === 45) { tipo='comida'; img=imgs.comida; }
-            else if (i === total-2) { tipo='veneno'; img=imgs.veneno; }
-            else if (r < 0.25) { tipo='pollo'; img=imgs.pollo; }
-            else if (r < 0.50) { tipo='bueno'; img=imgs.bueno; w=140; h=70; }
-            else if (r < 0.75) { tipo='malo'; img=imgs.malo1; }
-            else { tipo='malo'; img=imgs.malo2; w=60; h=60; }
-            itemsF2.push({ fTarget, x: GW + 200, yB: [20, 165, 315][Math.floor(Math.random()*3)], tipo, img, w, h, rec: false });
-        }
-    }
-
-    // --- SISTEMA DE INSTALACIÓN ---
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // Lanzamos el aviso a los 4 segundos de entrar
-        setTimeout(() => {
-            if (deferredPrompt) deferredPrompt.prompt();
-        }, 4000);
-    });
-
-    window.addEventListener('touchstart', (e) => {
-        if (estado === 'INICIO') { 
-            document.getElementById('selection').style.display = 'flex'; 
-            estado = 'SELECCION'; 
-            seleccionHabilitada = false;
-            setTimeout(() => { seleccionHabilitada = true; }, 400); 
-        }
-        else if (estado === 'JUGANDO_F1' && tiempo > 0) {
-            if(e.touches[0].clientX < window.innerWidth/2) { if(carril > 0) carril--; } else { if(carril < 2) carril++; }
-        } else if (estado === 'JUGANDO_F2') { if (player.saltos < 2) { player.vy = -14; player.saltos++; } }
-    });
-
-    setInterval(() => { 
-        if(estado === 'JUGANDO_F1' && tiempo > 0) {
-            const r = Math.random();
-            let t = (r < 0.33) ? 'pollo' : (r < 0.66) ? 'pizza' : 'guardia';
-            let tSize = (t === 'guardia') ? 150 : 110;
-            obstaculos.push({ x: (GW/3)*Math.floor(Math.random()*3) + (GW/6)-tSize/2, y: -150, tipo: t }); 
-        } 
-    }, 900);
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { 
-          navigator.serviceWorker.register('sw.js').then(reg => {
-              reg.onupdatefound = () => {
-                  const installingWorker = reg.installing;
-                  installingWorker.onstatechange = () => {
-                      if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                          if (confirm("¡Nueva versión disponible! ¿Actualizar?")) window.location.reload();
-                      }
-                  };
-              };
-          }); 
-      });
-    }
-
-    loop();
-</script>  
-</body>  
-</html>
+                        audio.crash.c
