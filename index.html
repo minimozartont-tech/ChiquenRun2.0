@@ -96,7 +96,7 @@
 
     const audio = {
         crash: new Audio('choque.mp3'), point: new Audio('sonido_pollo.mp3'),
-        bueno: new Audio('sonono_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
+        bueno: new Audio('sonido_bueno.mp3'), malo: new Audio('sonido_malo.wav'),
         bg1: null, bg2: null
     };
 
@@ -106,12 +106,9 @@
     let seleccionHabilitada = false;
     const player = { x: GW/2, y: GH-250, w: 120, h: 160, vy: 0, saltos: 0, speedOut: 0 };
 
-    function fadeOutAudio(audioElement) {
-        if (!audioElement) return;
-        try {
-            audioElement.pause();
-            audioElement.volume = 0;
-        } catch(e) { console.log(e); }
+    function detenerMusica(a) {
+        if (!a) return;
+        try { a.pause(); a.currentTime = 0; } catch(e) {}
     }
 
     function actualizarVidasUI() {
@@ -163,8 +160,8 @@
 
     function terminarJuego(mensaje, esVictoria) {
         estado = 'TERMINADO';
-        fadeOutAudio(audio.bg1);
-        fadeOutAudio(audio.bg2);
+        detenerMusica(audio.bg1);
+        detenerMusica(audio.bg2);
         
         document.getElementById('timer-display').style.display = 'none';
         document.getElementById('score-box').style.display = 'none';
@@ -407,4 +404,7 @@
         }, 4000);
     });
 
-    window.addEventListener('touchstart', (e) =
+    window.addEventListener('touchstart', (e) => {
+        if (estado === 'TERMINADO') return;
+        if (estado === 'INICIO') { 
+ 
